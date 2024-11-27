@@ -33,8 +33,7 @@ type Erros {
   Numero_Gols_Negativo
   Formato_Gols_Invalido
   Times_Nome_Igual
-  // Jogo_Repetido
-  // Jogos_Em_Excesso
+  Jogos_Em_Excesso
 }
 
 /// Representa um número de gols.
