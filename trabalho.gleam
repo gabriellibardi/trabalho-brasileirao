@@ -27,17 +27,17 @@
 import sgleam/check
 
 /// Conjunto dos possíveis erros a serem identificados no programa.
-type Erros {
-  Campos_Excessivos
-  Campos_Insuficientes
-  Numero_Gols_Negativo
-  Formato_Gols_Invalido
-  Times_Nome_Igual
-  Jogos_Em_Excesso
+pub type Erros {
+  CamposExcessivos
+  CamposInsuficientes
+  NumeroGolsNegativo
+  FormatoGolsInvalido
+  TimesNomeIgual
+  JogosEmExcesso
 }
 
 /// Representa um número de gols.
-opaque type Gols {
+pub opaque type Gols {
   Gols(numero_gols: Int)
 }
 /// Devolve Ok(Gols) com o valor de *num* se *num* for maior ou igual a zero, ou Error(
@@ -45,25 +45,36 @@ opaque type Gols {
 fn gols(num: Int) -> Result(Gols, Erros) {
   case num >= 0 {
     True -> Ok(Gols(num))
-    False -> Error(Erros(Numero_Gols_Negativo))
+    False -> Error(NumeroGolsNegativo)
   }
+}
+pub fn gols_examples() {
+  check.eq(gols(-1), Error(NumeroGolsNegativo))
+  check.eq(gols(0), Ok(Gols(0)))
+  check.eq(gols(1), Ok(Gols(1)))
+  check.eq(gols(5), Ok(Gols(5)))
 }
 /// Devolve o valor em *gols*.
 fn valor_gols(gols: Gols) -> Int {
   gols.numero_gols
 }
+pub fn valor_gols_examples() {
+  check.eq(valor_gols(Gols(0)), 0)
+  check.eq(valor_gols(Gols(2)), 2)
+  check.eq(valor_gols(Gols(3)), 3)
+} 
 
 /// Representa a pontuação de um time em um jogo realizado.
-type Pontuacao {
+pub type Pontuacao {
   Pontuacao(nome_time: String, numero_gols: Gols)
 }
 
 /// Representa um jogo realizado.
-type Jogo {
+pub type Jogo {
   Jogo(pontuacao_anfitriao: Pontuacao, pontuacao_visitante: Pontuacao)
 }
 
 /// Representa um desempenho de um time no Campeonato.
-type Desempenho {
+pub type Desempenho {
   Desempenho(nome_time: String, numero_pontos: Int, numero_vitorias: Int, saldo_gols: Int)
 }
