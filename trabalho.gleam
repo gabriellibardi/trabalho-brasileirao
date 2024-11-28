@@ -26,6 +26,8 @@
 
 import sgleam/check
 
+// Tipos de dados
+
 /// Conjunto dos possíveis erros a serem identificados no programa.
 pub type Erros {
   CamposExcessivos
@@ -42,7 +44,7 @@ pub opaque type Gols {
 }
 /// Devolve Ok(Gols) com o valor de *num* se *num* for maior ou igual a zero, ou Error(
 /// Numero_Gols_Negativo) caso contrário.
-fn gols(num: Int) -> Result(Gols, Erros) {
+pub fn gols(num: Int) -> Result(Gols, Erros) {
   case num >= 0 {
     True -> Ok(Gols(num))
     False -> Error(NumeroGolsNegativo)
@@ -55,7 +57,7 @@ pub fn gols_examples() {
   check.eq(gols(5), Ok(Gols(5)))
 }
 /// Devolve o valor em *gols*.
-fn valor_gols(gols: Gols) -> Int {
+pub fn valor_gols(gols: Gols) -> Int {
   gols.numero_gols
 }
 pub fn valor_gols_examples() {
@@ -78,3 +80,24 @@ pub type Jogo {
 pub type Desempenho {
   Desempenho(nome_time: String, numero_pontos: Int, numero_vitorias: Int, saldo_gols: Int)
 }
+
+
+// Funções do Programa
+
+// [lista de strings]
+
+/// Retorna uma lista de Jogos com base na *lista* de textos da entrada, ou um erro caso não
+/// seja possível.
+
+/// Separa o *texto* de entrada em diferentes elementos de acordo com os espaços presentes e
+/// coloca-os em uma lista.
+
+// para cada string em [lista de strings]
+// [lista dos elementos de cada string]
+
+/// Converte os itens da *lista* de entrada em um Jogo e retorna ele. Caso a *lista* não possa
+/// ser representada dessa forma, isto é, possui um número inválido de campos ou inconsistência
+/// nos dados, retorna um erro.
+
+// [lista de Jogos]
+
