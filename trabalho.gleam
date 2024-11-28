@@ -24,6 +24,7 @@
 // fridos) e, por fim, a ordem alfabética dos nomes dos times (todas essas informações 
 // são dispostas na tabela, que é ordenada a partir desses critérios).
 
+import gleam/list
 import gleam/string
 import sgleam/check
 
@@ -71,14 +72,14 @@ pub fn valor_gols_examples() {
   check.eq(valor_gols(Gols(3)), 3)
 }
 
-/// Representa a pontuação de um time em um jogo realizado.
-pub type Pontuacao {
-  Pontuacao(nome_time: String, numero_gols: Gols)
-}
-
-/// Representa um jogo realizado.
-pub type Jogo {
-  Jogo(pontuacao_anfitriao: Pontuacao, pontuacao_visitante: Pontuacao)
+/// Representa um placar de um jogo realizado.
+pub type Placar {
+  Placar(
+    nome_time_anf: String,
+    gols_anf: Gols,
+    nome_time_vis: String,
+    gols_vis: Gols,
+  )
 }
 
 /// Representa um desempenho de um time no Campeonato.
@@ -97,16 +98,16 @@ pub type Desempenho {
 
 /// Retorna uma lista de Jogos com base na *lista* de textos da entrada, ou um erro caso não
 /// seja possível.
-fn cria_lista_jogos(lista: List(String)) -> Result(List(Jogo), Erro) {
+fn cria_lista_placares(lista: List(String)) -> Result(List(Placar), Erro) {
   case lista {
     [] -> Ok([])
     [primeiro, ..resto] -> {
-      case converte_para_jogo(primeiro.split()) {
+      case converte_para_placar(string.split(primeiro, " ")) {
         Error(erro) -> Error(erro)
         Ok(jogo) -> {
-          case cria_lista_jogos(resto) {
+          case cria_lista_placares(resto) {
             Error(erro) -> Error(erro)
-            Ok(resto_jogos) -> jogo <> resto_jogos
+            Ok(resto_jogos) -> Ok(list.append(jogo, resto_jogos))
           }
         }
       }
@@ -114,42 +115,43 @@ fn cria_lista_jogos(lista: List(String)) -> Result(List(Jogo), Erro) {
   }
 }
 
-pub fn cria_lista_jogos_examples() {
-  check.eq(cria_lista_jogos([]), OK([]))
-  check.eq(cria_lista_jogos([""]), Erro(CamposInsuficientes))
+pub fn cria_lista_placares_examples() {
+  check.eq(cria_lista_placares([]), Ok([]))
+  check.eq(cria_lista_placares([""]), Error(CamposInsuficientes))
   check.eq(
-    cria_lista_jogos(["Sao-Paulo 2 Palmeiras 1 Corinthians"]),
-    Erro(CamposExcessivos),
+    cria_lista_placares(["Sao-Paulo 2 Palmeiras 1 Corinthians"]),
+    Error(CamposExcessivos),
   )
   check.eq(
-    cria_lista_jogos(["Sao-Paulo -2 Palmeiras 1"]),
-    Erro(NumeroGolsNegativo),
+    cria_lista_placares(["Sao-Paulo -2 Palmeiras 1"]),
+    Error(NumeroGolsNegativo),
   )
   check.eq(
-    cria_lista_jogos(["São-Paulo Palmeiras Corinthians Flamengo"]),
-    Erro(FormatoGolsInvalido),
+    cria_lista_placares(["São-Paulo Palmeiras Corinthians Flamengo"]),
+    Error(FormatoGolsInvalido),
   )
-  check.eq(cria_lista_jogos(["Palmeiras 2 Palmeiras 3"]), Erro(TimesNomeIgual))
   check.eq(
-    cria_lista_jogos(["Sao-Paulo 2 Palmeiras 1", "Sao-Paulo 1 Palmeiras 3"]),
-    Erro(JogosEmExcesso),
+    cria_lista_placares(["Palmeiras 2 Palmeiras 3"]),
+    Error(TimesNomeIgual),
   )
-  check.eq(cria_lista_jogos(["Sao-Paulo 2 Palmeiras 1"]), [
-    Result(Jogo(
-      Pontuacao("Sao-Paulo", Gols(2)),
-      Pontuacao("Palmeiras", Gols(1)),
-    )),
-  ])
   check.eq(
-    cria_lista_jogos([
+    cria_lista_placares(["Sao-Paulo 2 Palmeiras 1", "Sao-Paulo 1 Palmeiras 3"]),
+    Error(JogosEmExcesso),
+  )
+  check.eq(
+    cria_lista_placares(["Sao-Paulo 2 Palmeiras 1"]),
+    Ok([Placar("Sao-Paulo", Gols(2), "Palmeiras", Gols(1))]),
+  )
+  check.eq(
+    cria_lista_placares([
       "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
       "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
     ]),
-    Result([
-      Jogo(Pontuacao("Sao-Paulo", Gols(1)), Pontuacao("Atletico-MG", Gols(2))),
-      Jogo(Pontuacao("Flamengo", Gols(2)), Pontuacao("Palmeiras", Gols(1))),
-      Jogo(Pontuacao("Palmeiras", Gols(0)), Pontuacao("Sao-Paulo", Gols(0))),
-      Jogo(Pontuacao("Atletico-MG", Gols(1)), Pontuacao("Flamengo", Gols(2))),
+    Ok([
+      Placar("Sao-Paulo", Gols(1), "Atletico-MG", Gols(2)),
+      Placar("Flamengo", Gols(2), "Palmeiras", Gols(1)),
+      Placar("Palmeiras", Gols(0), "Sao-Paulo", Gols(0)),
+      Placar("Atletico-MG", Gols(1), "Flamengo", Gols(2)),
     ]),
   )
 }
