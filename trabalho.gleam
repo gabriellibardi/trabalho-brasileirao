@@ -24,12 +24,13 @@
 // fridos) e, por fim, a ordem alfabética dos nomes dos times (todas essas informações 
 // são dispostas na tabela, que é ordenada a partir desses critérios).
 
+import gleam/int
 import sgleam/check
 
 // Tipos de dados
 
 /// Conjunto dos possíveis erros a serem identificados no programa.
-pub type Erros {
+pub type Erro {
   CamposExcessivos
   CamposInsuficientes
   NumeroGolsNegativo
@@ -44,7 +45,7 @@ pub opaque type Gols {
 }
 /// Devolve Ok(Gols) com o valor de *num* se *num* for maior ou igual a zero, ou Error(
 /// Numero_Gols_Negativo) caso contrário.
-pub fn gols(num: Int) -> Result(Gols, Erros) {
+pub fn gols(num: Int) -> Result(Gols, Erro) {
   case num >= 0 {
     True -> Ok(Gols(num))
     False -> Error(NumeroGolsNegativo)
@@ -56,6 +57,7 @@ pub fn gols_examples() {
   check.eq(gols(1), Ok(Gols(1)))
   check.eq(gols(5), Ok(Gols(5)))
 }
+
 /// Devolve o valor em *gols*.
 pub fn valor_gols(gols: Gols) -> Int {
   gols.numero_gols
@@ -66,14 +68,9 @@ pub fn valor_gols_examples() {
   check.eq(valor_gols(Gols(3)), 3)
 } 
 
-/// Representa a pontuação de um time em um jogo realizado.
-pub type Pontuacao {
-  Pontuacao(nome_time: String, numero_gols: Gols)
-}
-
-/// Representa um jogo realizado.
-pub type Jogo {
-  Jogo(pontuacao_anfitriao: Pontuacao, pontuacao_visitante: Pontuacao)
+/// Representa o placar de um jogo realizado.
+pub type Placar {
+  Placar(anfitriao: String, gols_anfitriao: Gols, visitante: String, gols_visitante: Gols)
 }
 
 /// Representa um desempenho de um time no Campeonato.
@@ -92,12 +89,38 @@ pub type Desempenho {
 /// Separa o *texto* de entrada em diferentes elementos de acordo com os espaços presentes e
 /// coloca-os em uma lista.
 
-// para cada string em [lista de strings]
+// para cada string em [listaErro de strings]
 // [lista dos elementos de cada string]
 
-/// Converte os itens da *lista* de entrada em um Jogo e retorna ele. Caso a *lista* não possa
-/// ser representada dessa forma, isto é, possui um número inválido de campos ou inconsistência
-/// nos dados, retorna um erro.
-
-// [lista de Jogos]
-
+/// Converte os itens de *campos* em um Jogo e retorna um Result composto por um Ok com o novo
+/// Jogo, ou um Error com o  correspondente.
+pub fn converte_para_placar(campos: List(String)) -> Result(Placar, Erro) {
+  case campos {
+    [] -> Error(CamposInsuficientes)
+    [_] -> Error(CamposInsuficientes)
+    [_, _] -> Error(CamposInsuficientes)
+    [_, _, _] -> Error(CamposInsuficientes)
+    [_, _, _, _, _, ..] -> Error(CamposExcessivos)
+    [anf, gols_anf, vis, gols_vis] -> case int.parse(gols_anf), int.parse(gols_vis) {
+      Error(_), _ -> Error(FormatoGolsInvalido)
+      _, Error(_) -> Error(FormatoGolsInvalido)
+      Ok(gols_anf_ok), Ok(gols_vis_ok) -> case gols(gols_anf_ok), gols(gols_vis_ok) {
+        Error(erro), _ -> Error(erro)
+        _, Error(erro) -> Error(erro)
+        Ok(gols_anf_tad), Ok(gols_vis_tad) -> Ok(Placar(anf, gols_anf_tad, vis, gols_vis_tad))
+      }
+    }
+    
+  }
+}
+pub fn converte_para_placar_examples() {
+  check.eq(converte_para_placar([]), Error(CamposInsuficientes))
+  check.eq(converte_para_placar(["Fortaleza"]), Error(CamposInsuficientes))
+  check.eq(converte_para_placar(["Palmeiras", "0"]), Error(CamposInsuficientes))
+  check.eq(converte_para_placar(["Flamengo", "3", "Santos"]), Error(CamposInsuficientes))
+  check.eq(converte_para_placar(["Corinthians", "1", "Coritiba", "3", "BotaFogo"]), Error(CamposExcessivos))
+  check.eq(converte_para_placar(["SaoPaulo", "dois", "Palmeiras", "3"]), Error(FormatoGolsInvalido))
+  check.eq(converte_para_placar(["Fortaleza", "-4", "Internacional", "0"]), Error(NumeroGolsNegativo))
+  check.eq(converte_para_placar(["Criciuma", "1", "Fluminense", "3"]), Ok(Placar("Criciuma", Gols(1), "Fluminense", Gols(3))))
+  check.eq(converte_para_placar(["Vasco", "0", "Maringa", "2"]), Ok(Placar("Vasco", Gols(0), "Maringa", Gols(2))))
+}
