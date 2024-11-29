@@ -155,3 +155,14 @@ pub fn converte_para_placar_examples() {
     Ok(Placar("Vasco", Gols(0), "Maringa", Gols(2))),
   )
 }
+
+/// Lista de Placares:
+/// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
+/// Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Goias", Gols(1), "AtleticoMG", Gols(0)), Placar("Sport", Gols(0), "AtleticoGO", Gols(0)),  
+/// Placar("Coritiba", Gols(1), "Fluminense", Gols(1)), Placar("Fortaleza", Gols(3), "Bahia", Gols(2)), Placar("Corinthians", Gols(4), "SaoPaulo", Gols(1)), 
+/// Placar("Vitoria", Gols(2), "Chapecoense", Gols(1)), Placar("Paicandu", Gols(1), "Londrina", Gols(2)), Placar("Juventude", Gols(2), "Criciuma", Gols(2)), 
+/// Placar("SaoPaulo", Gols(1), "Palmeiras", Gols(0)), Placar("AthleticoPR", Gols(3), "Santos", Gols(0)), Placar("Palmeiras", Gols(3), "Internacional", Gols(3)),
+/// Placar("AtleticoGO", Gols(2), "Juventude", Gols(4)), Placar("Paicandu", Gols(0), "Chapecoense", Gols(0)), Placar("Sport", Gols(2), "Cruzeiro", Gols(1)),  
+/// Placar("Cuiaba", Gols(4), "Corinthians", Gols(0)), Placar("Santos", Gols(1), "Maringa", Gols(5)), Placar("Cuiaba", Gols(2), "Bahia", Gols(2)), 
+/// Placar("Vasco", Gols(0), "Flamengo", Gols(1)), Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)), Placar("BotaFogo", Gols(1), "Coritiba", Gols(3))
+/// Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)), Placar("Criciuma", Gols(2), "Goias", Gols(0)), Placar("Vitoria", Gols(2), "Gremio", Gols(3)), 
