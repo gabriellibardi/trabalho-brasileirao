@@ -156,29 +156,77 @@ pub fn converte_para_placar_examples() {
   )
 }
 
-/// Verifica se uma lista de *placares* não possui inconsistência, isto é, se um time anfitrião
-/// recebe um time visitante mais de uma vez presente ou se os times de um placar possuem mesmo
-/// nome, retornando um Result composto por um Ok com os *placares*, ou um Error com o Erro cor-
-/// respondente.
+/// Verifica se uma lista de *placares* possui alguma inconsistência, isto é, se os times de
+/// um placar possuem mesmo nome ou se um time anfitrião recebe um time visitante mais de uma
+/// vez presente, retornando um Result composto por um Ok com os *placares*, ou um Error com
+/// o Erro correspondente.
 pub fn verifica_placares(placares: List(Placar)) -> Result(List(Placar), Erro) {
   case placares {
     [] -> Ok([])
-    [primeiro, ..resto] -> case verifica_times_placar(primeiro) {
-      Error(erro) -> Error(erro)
-      Ok(_) -> case repete_combinacao_times(primeiro, resto) {
-        True -> Error(JogosEmExcesso)
-        False -> verifica_placares(resto)
+    [primeiro, ..resto] ->
+      case
+        primeiro.anfitriao == primeiro.visitante,
+        repete_combinacao_times(primeiro, resto)
+      {
+        True, _ -> Error(TimesNomeIgual)
+        False, True -> Error(JogosEmExcesso)
+        False, False ->
+          case verifica_placares(resto) {
+            Error(erro) -> Error(erro)
+            Ok(placares_ok) -> Ok([primeiro, ..placares_ok])
+          }
       }
-    }
   }
 }
+
 pub fn verifica_placares_examples() {
   check.eq(verifica_placares([]), Ok([]))
-  check.eq(verifica_placares([Placar("Coritiba", Gols(1), "Fluminense", Gols(1)), Placar("Fortaleza", Gols(3), "Bahia", Gols(2))]), Ok([]))
-  check.eq(verifica_placares([Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Gremio", Gols(1), "Cruzeiro", Gols(0))]), Error(JogosEmExcesso))
-  check.eq(verifica_placares([Placar("AthleticoPR", Gols(3), "Internacional", Gols(0)), Placar("Palmeiras", Gols(3), "Palmeiras", Gols(3))]), Error(TimesNomeIgual))
-  check.eq(verifica_placares([Placar("Vasco", Gols(0), "Flamengo", Gols(1)), Placar("Fortaleza", Gols(2), "Fluminense", Gols(2))]), Ok([]))
-  check.eq(verifica_placares([Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)), Placar("Criciuma", Gols(2), "Goias", Gols(0)), Placar("Vitoria", Gols(2), "Gremio", Gols(3))]), Ok([]))
+  check.eq(
+    verifica_placares([
+      Placar("Coritiba", Gols(1), "Fluminense", Gols(1)),
+      Placar("Fortaleza", Gols(3), "Bahia", Gols(2)),
+    ]),
+    Ok([
+      Placar("Coritiba", Gols(1), "Fluminense", Gols(1)),
+      Placar("Fortaleza", Gols(3), "Bahia", Gols(2)),
+    ]),
+  )
+  check.eq(
+    verifica_placares([
+      Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)),
+      Placar("Gremio", Gols(1), "Cruzeiro", Gols(0)),
+    ]),
+    Error(JogosEmExcesso),
+  )
+  check.eq(
+    verifica_placares([
+      Placar("AthleticoPR", Gols(3), "Internacional", Gols(0)),
+      Placar("Palmeiras", Gols(3), "Palmeiras", Gols(3)),
+    ]),
+    Error(TimesNomeIgual),
+  )
+  check.eq(
+    verifica_placares([
+      Placar("Vasco", Gols(0), "Flamengo", Gols(1)),
+      Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)),
+    ]),
+    Ok([
+      Placar("Vasco", Gols(0), "Flamengo", Gols(1)),
+      Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)),
+    ]),
+  )
+  check.eq(
+    verifica_placares([
+      Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)),
+      Placar("Criciuma", Gols(2), "Goias", Gols(0)),
+      Placar("Vitoria", Gols(2), "Gremio", Gols(3)),
+    ]),
+    Ok([
+      Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)),
+      Placar("Criciuma", Gols(2), "Goias", Gols(0)),
+      Placar("Vitoria", Gols(2), "Gremio", Gols(3)),
+    ]),
+  )
 }
 
 /// Verifica se a combinação time anfitrião-visitante do *placar* repete na lista de *placares*,
@@ -186,30 +234,38 @@ pub fn verifica_placares_examples() {
 pub fn repete_combinacao_times(placar: Placar, placares: List(Placar)) -> Bool {
   case placares {
     [] -> False
-    [primeiro, ..resto] -> {placar.anfitriao == primeiro.anfitriao && placar.visitante == primeiro.visitante} || repete_combinacao_times(placar, resto)
+    [primeiro, ..resto] ->
+      {
+        placar.anfitriao == primeiro.anfitriao
+        && placar.visitante == primeiro.visitante
+      }
+      || repete_combinacao_times(placar, resto)
   }
 }
+
 pub fn repete_combinacao_times_examples() {
-  check.eq(repete_combinacao_times(Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)), []), False)
-  check.eq(repete_combinacao_times(Placar("Palmeiras", Gols(3), "Internacional", Gols(3)), [Placar("Paicandu", Gols(1), "Londrina", Gols(2))]), False)
-  check.eq(repete_combinacao_times(Placar("Vitoria", Gols(2), "Gremio", Gols(3)), [Placar("AtleticoGO", Gols(2), "Juventude", Gols(4)), Placar("Vitoria", Gols(0), "Gremio", Gols(0))]), True)
+  check.eq(
+    repete_combinacao_times(
+      Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)),
+      [],
+    ),
+    False,
+  )
+  check.eq(
+    repete_combinacao_times(
+      Placar("Palmeiras", Gols(3), "Internacional", Gols(3)),
+      [Placar("Paicandu", Gols(1), "Londrina", Gols(2))],
+    ),
+    False,
+  )
+  check.eq(
+    repete_combinacao_times(Placar("Vitoria", Gols(2), "Gremio", Gols(3)), [
+      Placar("AtleticoGO", Gols(2), "Juventude", Gols(4)),
+      Placar("Vitoria", Gols(0), "Gremio", Gols(0)),
+    ]),
+    True,
+  )
 }
-
-/// Verifica se os times de um *placar* não são inválidos, isto é, se são string vazias ou
-/// se o nome do time anfitrião não é o mesmo do time visitante, retornando um Result com-
-/// posto por um Ok com o *placar*, ou um Error com o Erro correspondente.
-pub fn verifica_times_placar(placar: Placar) -> Result(Placar, Erro) {
-  case placar.anfitriao == placar.visitante {
-    True -> Error(TimesNomeIgual)
-    False -> Ok(placar)
-  }
-}
-pub fn verifica_times_placar_examples() {
-  check.eq(verifica_times_placar(Placar("Flamengo", Gols(0), "Flamengo", Gols(1))), Error(TimesNomeIgual))
-  check.eq(verifica_times_placar(Placar("Maringa", Gols(1), "BotaFogo", Gols(3))), Ok(Placar("Maringa", Gols(1), "BotaFogo", Gols(3))))
-  check.eq(verifica_times_placar(Placar("Vasco", Gols(2), "Internacional", Gols(0))), Ok(Placar("Vasco", Gols(2), "Internacional", Gols(0))))
-}
-
 /// Lista de Placares:
 /// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
 /// Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Goias", Gols(1), "AtleticoMG", Gols(0)), Placar("Sport", Gols(0), "AtleticoGO", Gols(0)),  
