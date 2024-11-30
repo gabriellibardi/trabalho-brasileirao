@@ -266,6 +266,28 @@ pub fn repete_combinacao_times_examples() {
     True,
   )
 }
+
+/// Retorna uma lista de Desempenhos com base nos *placares*.
+pub fn calcula_desempenhos(placares: List(Placar>) -> List(Desempenho) {
+
+}
+pub fn calcula_desempenhos_examples() {
+  check.eq(calcula_desempenhos([]), [])
+  check.eq(calcula_desempenhos([Placar("Palmeiras", Gols(3), "Internacional", Gols(3))]), [Desempenho("Palmeiras", 1, 0, 0), Desempenho("Internacional", 1, 0, 0)])
+  check.eq(calcula_desempenhos([Placar("Criciuma", Gols(2), "Goias", Gols(0)), Placar("Vitoria", Gols(2), "Gremio", Gols(3))]), [Desempenho("Criciuma", 3, 1, -2), Desempenho("Goias", 0, 0, -2), Desempenho("Vitoria", 0, 0, -1), Desempenho("Gremio", 3, 1, 1)])
+  check.eq(calcula_desempenhos([Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Paicandu", Gols(0), "Chapecoense", Gols(0)), Placar("Vasco", Gols(0), "Flamengo", Gols(1))]), [Desempenho("Flamengo", 0, 1, 0), Desempenho("AthleticoPR", 3, 1, 1), Desempenho("Paicandu", 1, 0, 0), Desempenho("Chapecoense", 1, 0, 0), Desempenho("Vasco", 0, 0, -1)])
+}
+
+/// Retorna uma lista composta por dois Desempenhos com base no *placar* e dos times presentes.
+pub fn calcula_desempenho(placar: Placar) -> List(Desempenho) {
+
+}
+pub fn calcula_desempenho_examples() {
+  check.eq(calcula_desempenho(Placar("Sport", Gols(2), "Cruzeiro", Gols(1))), [Desempenho("Sport", 3, 1, 1), Desempenho("Cruzeiro", 0, 0, -1)])
+  check.eq(calcula_desempenho(Placar("Maringa", Gols(1), "BotaFogo", Gols(3))), [Desempenho("Maringa", 0, 0, -2), Desempenho("BotaFogo", 3, 1, 2)])
+  check.eq(calcula_desempenho(Placar("Cuiaba", Gols(2), "Bahia", Gols(2))), [Desempenho("Cuiaba", 1, 0, 0), Desempenho("Bahia", 1, 0, 0)])
+}
+
 /// Lista de Placares:
 /// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
 /// Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Goias", Gols(1), "AtleticoMG", Gols(0)), Placar("Sport", Gols(0), "AtleticoGO", Gols(0)),  
