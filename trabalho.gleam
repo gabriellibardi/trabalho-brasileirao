@@ -25,6 +25,7 @@
 // são dispostas na tabela, que é ordenada a partir desses critérios).
 
 import gleam/int
+import gleam/order
 import gleam/string
 import sgleam/check
 
@@ -92,7 +93,7 @@ pub type Desempenho {
   )
 }
 
-// Funções do Programa ---------------------------------------------------------------------
+// Funções do Programa --------------------------------------------------------------------- ---------------------------------------------------------------------
 
 // Conversão da lista de textos em uma lista de placares -----------------------------------
 
@@ -493,4 +494,181 @@ pub fn juncao_desempenhos_examples() {
 /// Placar("Cuiaba", Gols(4), "Corinthians", Gols(0)), Placar("Santos", Gols(1), "Maringa", Gols(5)), Placar("Cuiaba", Gols(2), "Bahia", Gols(2)), 
 /// Placar("Vasco", Gols(0), "Flamengo", Gols(1)), Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)), Placar("BotaFogo", Gols(1), "Coritiba", Gols(3))
 /// Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)), Placar("Criciuma", Gols(2), "Goias", Gols(0)), Placar("Vitoria", Gols(2), "Gremio", Gols(3)), 
+
 // Ordenação dos desempenhos ----------------------------------------------------------------
+
+/// Retorna a *lista_desempenhos* ordenada com base nos desempenhos dos times. Caso dois times
+/// empatem, o desempate é feito de forma hierárquica pelo número de vitórias, saldo de gols
+/// (número de gols feitos menos o número de gols sofridos) e pela ordem alfabética.
+pub fn ordena_desempenhos(
+  lista_desempenhos: List(Desempenho),
+) -> List(Desempenho) {
+  case lista_desempenhos {
+    [] -> []
+    [primeiro, ..resto] -> insere_ordenado(primeiro, ordena_desempenhos(resto))
+  }
+}
+
+pub fn ordena_desempenhos_examples() {
+  check.eq(ordena_desempenhos([]), [])
+  check.eq(
+    ordena_desempenhos([
+      Desempenho("Sport", 3, 1, 1),
+      Desempenho("Cruzeiro", 0, 0, -1),
+    ]),
+    [Desempenho("Sport", 3, 1, 1), Desempenho("Cruzeiro", 0, 0, -1)],
+  )
+  check.eq(
+    ordena_desempenhos([
+      Desempenho("Palmeiras", 0, 0, -2),
+      Desempenho("Fortaleza", 3, 1, 3),
+    ]),
+    [Desempenho("Fortaleza", 3, 1, 3), Desempenho("Palmeiras", 0, 0, -2)],
+  )
+  check.eq(
+    ordena_desempenhos([
+      Desempenho("Maringa", 3, 1, 6),
+      Desempenho("Botafogo", 0, 0, 4),
+      Desempenho("Coritiba", 3, 1, 6),
+      Desempenho("Fluminense", 3, 1, 3),
+      Desempenho("Bahia", 6, 2, 9),
+      Desempenho("Flamengo", 4, 0, 2),
+    ]),
+    [
+      Desempenho("Bahia", 6, 2, 9),
+      Desempenho("Flamengo", 4, 0, 2),
+      Desempenho("Coritiba", 3, 1, 6),
+      Desempenho("Maringa", 3, 1, 6),
+      Desempenho("Fluminense", 3, 1, 3),
+      Desempenho("Botafogo", 0, 0, 4),
+    ],
+  )
+}
+
+/// Insere *desempenho* no lugar correto da *lista_desempenhos*, isto é, seguindo as seguintes
+/// regras de ordenação: número de pontos, número de vitórias, saldo de gols e ordem alfabética.
+/// É necessário que *lista_desempenhos* já esteja ordenada.
+pub fn insere_ordenado(
+  desempenho: Desempenho,
+  lista_desempenhos: List(Desempenho),
+) -> List(Desempenho) {
+  case lista_desempenhos {
+    [] -> [desempenho]
+    [primeiro, ..resto] ->
+      case encontra_melhor(desempenho, primeiro) == desempenho {
+        True -> [desempenho, ..lista_desempenhos]
+        False -> [primeiro, ..insere_ordenado(desempenho, resto)]
+      }
+  }
+}
+
+pub fn insere_ordenado_examples() {
+  check.eq(insere_ordenado(Desempenho("Bahia", 3, 1, 1), []), [
+    Desempenho("Bahia", 3, 1, 1),
+  ])
+  check.eq(
+    insere_ordenado(Desempenho("Bahia", 3, 1, 1), [
+      Desempenho("Fortaleza", 0, 0, 2),
+    ]),
+    [Desempenho("Bahia", 3, 1, 1), Desempenho("Fortaleza", 0, 0, 2)],
+  )
+  check.eq(
+    insere_ordenado(Desempenho("Bahia", 3, 1, 1), [
+      Desempenho("Palmeiras", 6, 2, 7),
+    ]),
+    [Desempenho("Palmeiras", 6, 2, 7), Desempenho("Bahia", 3, 1, 1)],
+  )
+  check.eq(
+    insere_ordenado(Desempenho("Maringa", 3, 1, 7), [
+      Desempenho("Fluminense", 8, 2, 5),
+      Desempenho("São-Paulo", 8, 2, 5),
+      Desempenho("Coritiba", 6, 2, 4),
+      Desempenho("Fortaleza", 2, 0, 2),
+    ]),
+    [
+      Desempenho("Fluminense", 8, 2, 5),
+      Desempenho("São-Paulo", 8, 2, 5),
+      Desempenho("Coritiba", 6, 2, 4),
+      Desempenho("Maringa", 3, 1, 7),
+      Desempenho("Fortaleza", 2, 0, 2),
+    ],
+  )
+}
+
+/// Retorna o desempenho do time que possui um melhor desempenho entre *desempenho1* e *desempe-
+/// nho2*, seguindo as ordem de pontuação: número de pontos, número de vitórias, saldo de gols e
+/// ordem alfabética.
+pub fn encontra_melhor(
+  desempenho1: Desempenho,
+  desempenho2: Desempenho,
+) -> Desempenho {
+  case
+    desempenho1.numero_pontos > desempenho2.numero_pontos,
+    desempenho1.numero_pontos < desempenho2.numero_pontos
+  {
+    True, _ -> desempenho1
+    False, True -> desempenho2
+    False, False ->
+      case
+        desempenho1.numero_vitorias > desempenho2.numero_vitorias,
+        desempenho1.numero_vitorias < desempenho2.numero_vitorias
+      {
+        True, _ -> desempenho1
+        False, True -> desempenho2
+        False, False ->
+          case
+            desempenho1.saldo_gols > desempenho2.saldo_gols,
+            desempenho1.saldo_gols < desempenho2.saldo_gols
+          {
+            True, _ -> desempenho1
+            False, True -> desempenho2
+            False, False ->
+              case
+                string.compare(desempenho1.nome_time, desempenho2.nome_time)
+              {
+                order.Lt -> desempenho1
+                order.Gt -> desempenho2
+                order.Eq -> desempenho1
+              }
+          }
+      }
+  }
+}
+
+pub fn encontra_melhor_examples() {
+  check.eq(
+    encontra_melhor(
+      Desempenho("Sport", 3, 1, 1),
+      Desempenho("Cruzeiro", 0, 0, -1),
+    ),
+    Desempenho("Sport", 3, 1, 1),
+  )
+  check.eq(
+    encontra_melhor(
+      Desempenho("Cruzeiro", 0, 0, -1),
+      Desempenho("Sport", 3, 1, 1),
+    ),
+    Desempenho("Sport", 3, 1, 1),
+  )
+  check.eq(
+    encontra_melhor(
+      Desempenho("Palmeiras", 3, 1, -1),
+      Desempenho("Fortaleza", 3, 3, 3),
+    ),
+    Desempenho("Fortaleza", 3, 3, 3),
+  )
+  check.eq(
+    encontra_melhor(
+      Desempenho("Bahia", 0, 0, 1),
+      Desempenho("Maringa", 0, 0, -1),
+    ),
+    Desempenho("Bahia", 0, 0, 1),
+  )
+  check.eq(
+    encontra_melhor(
+      Desempenho("Fortaleza", 0, 0, 1),
+      Desempenho("Cruzeiro", 0, 0, 1),
+    ),
+    Desempenho("Cruzeiro", 0, 0, 1),
+  )
+}
