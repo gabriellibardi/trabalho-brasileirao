@@ -25,7 +25,6 @@
 // são dispostas na tabela, que é ordenada a partir desses critérios).
 
 import gleam/int
-import gleam/list
 import gleam/string
 import sgleam/check
 
@@ -359,10 +358,46 @@ pub fn calcula_desempenhos_() {
 
 /// Retorna uma lista composta por dois Desempenhos com base no *placar* e dos times presentes.
 pub fn calcula_desempenho(placar: Placar) -> List(Desempenho) {
-  todo
+  case
+    placar.gols_anf.numero_gols == placar.gols_vis.numero_gols,
+    placar.gols_anf.numero_gols > placar.gols_vis.numero_gols
+  {
+    True, _ -> [
+      Desempenho(placar.nome_time_anf, 1, 0, 0),
+      Desempenho(placar.nome_time_vis, 1, 0, 0),
+    ]
+    False, True -> [
+      Desempenho(
+        placar.nome_time_anf,
+        3,
+        1,
+        placar.gols_anf.numero_gols - placar.gols_vis.numero_gols,
+      ),
+      Desempenho(
+        placar.nome_time_vis,
+        0,
+        0,
+        placar.gols_vis.numero_gols - placar.gols_anf.numero_gols,
+      ),
+    ]
+    False, False -> [
+      Desempenho(
+        placar.nome_time_anf,
+        0,
+        0,
+        placar.gols_anf.numero_gols - placar.gols_vis.numero_gols,
+      ),
+      Desempenho(
+        placar.nome_time_vis,
+        3,
+        1,
+        placar.gols_vis.numero_gols - placar.gols_anf.numero_gols,
+      ),
+    ]
+  }
 }
 
-pub fn calcula_desempenho_() {
+pub fn calcula_desempenho_examples() {
   check.eq(calcula_desempenho(Placar("Sport", Gols(2), "Cruzeiro", Gols(1))), [
     Desempenho("Sport", 3, 1, 1),
     Desempenho("Cruzeiro", 0, 0, -1),
@@ -376,16 +411,6 @@ pub fn calcula_desempenho_() {
     Desempenho("Bahia", 1, 0, 0),
   ])
 }
-
-// Ordenação dos desempenhos ----------------------------------------------------------------
-
-
-
-
-
-
-
-
 /// Lista de Placares:
 /// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
 /// Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Goias", Gols(1), "AtleticoMG", Gols(0)), Placar("Sport", Gols(0), "AtleticoGO", Gols(0)),  
@@ -396,3 +421,4 @@ pub fn calcula_desempenho_() {
 /// Placar("Cuiaba", Gols(4), "Corinthians", Gols(0)), Placar("Santos", Gols(1), "Maringa", Gols(5)), Placar("Cuiaba", Gols(2), "Bahia", Gols(2)), 
 /// Placar("Vasco", Gols(0), "Flamengo", Gols(1)), Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)), Placar("BotaFogo", Gols(1), "Coritiba", Gols(3))
 /// Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)), Placar("Criciuma", Gols(2), "Goias", Gols(0)), Placar("Vitoria", Gols(2), "Gremio", Gols(3)), 
+// Ordenação dos desempenhos ----------------------------------------------------------------
