@@ -96,7 +96,7 @@ pub type Desempenho {
 
 // Conversão da lista de textos em uma lista de placares -----------------------------------
 
-/// Retorna uma lista de Placares com base na *lista* de textos da entrada, ou o erro corres-
+/// Retorna uma lista de Placares com base na *lista* de textos da entrada, ou o Erro corres-
 /// pondente caso não seja possível.
 fn cria_lista_placares(lista: List(String)) -> Result(List(Placar), Erro) {
   case lista {
@@ -148,8 +148,7 @@ pub fn cria_lista_placares_examples() {
   )
 }
 
-/// Converte os itens de *campos* em um Jogo e retorna um Result composto por um Ok com o novo
-/// Jogo, ou um Error com o  correspondente.
+/// Retorna um Placar com base na *lista* de textos da entrada, ou o Erro correspondente.
 pub fn converte_para_placar(campos: List(String)) -> Result(Placar, Erro) {
   case campos {
     [] -> Error(CamposInsuficientes)
@@ -205,9 +204,9 @@ pub fn converte_para_placar_examples() {
 // Verificação dos placares -----------------------------------------------------------------
 
 /// Verifica se uma lista de *placares* possui alguma inconsistência, isto é, se os times de
-/// um placar possuem mesmo nome ou se um time anfitrião recebe um time visitante mais de uma
-/// vez presente, retornando um Result composto por um Ok com os *placares*, ou um Error com
-/// o Erro correspondente.
+/// um placar possuem mesmo nome ou se um time anfitrião recebe um mesmo time visitante mais
+/// de uma vez, retornando os mesmos *placares* caso não haja inconsistências ou o Erro cor-
+/// respondente.
 pub fn verifica_placares(placares: List(Placar)) -> Result(List(Placar), Erro) {
   case placares {
     [] -> Ok([])
@@ -321,13 +320,21 @@ pub fn repete_combinacao_times_examples() {
 pub fn calcula_desempenhos(placares: List(Placar)) -> List(Desempenho) {
   case placares {
     [] -> []
-    [primeiro, ..resto] -> case calcula_desempenho(primeiro) {
-      todo
-    }
+    [primeiro, ..resto] ->
+      case calcula_desempenho(primeiro) {
+        [] -> []
+        [_] -> []
+        [_, _, _, ..] -> []
+        [desempenho_anf, desemepenho_vis] ->
+          juncao_desempenhos(
+            juncao_desempenhos(calcula_desempenhos(resto), desempenho_anf),
+            desemepenho_vis,
+          )
+      }
   }
 }
 
-pub fn calcula_desempenhos_() {
+pub fn calcula_desempenhos_examples() {
   check.eq(calcula_desempenhos([]), [])
   check.eq(
     calcula_desempenhos([Placar("Palmeiras", Gols(3), "Internacional", Gols(3))]),
@@ -339,10 +346,10 @@ pub fn calcula_desempenhos_() {
       Placar("Vitoria", Gols(2), "Gremio", Gols(3)),
     ]),
     [
-      Desempenho("Criciuma", 3, 1, -2),
-      Desempenho("Goias", 0, 0, -2),
       Desempenho("Vitoria", 0, 0, -1),
       Desempenho("Gremio", 3, 1, 1),
+      Desempenho("Criciuma", 3, 1, 2),
+      Desempenho("Goias", 0, 0, -2),
     ],
   )
   check.eq(
@@ -352,52 +359,29 @@ pub fn calcula_desempenhos_() {
       Placar("Vasco", Gols(0), "Flamengo", Gols(1)),
     ]),
     [
-      Desempenho("Flamengo", 0, 1, 0),
-      Desempenho("AthleticoPR", 3, 1, 1),
+      Desempenho("Vasco", 0, 0, -1),
+      Desempenho("Flamengo", 3, 1, 0),
       Desempenho("Paicandu", 1, 0, 0),
       Desempenho("Chapecoense", 1, 0, 0),
-      Desempenho("Vasco", 0, 0, -1),
+      Desempenho("AthleticoPR", 3, 1, 1),
     ],
   )
 }
 
 /// Retorna uma lista composta por dois Desempenhos com base no *placar* e dos times presentes.
 pub fn calcula_desempenho(placar: Placar) -> List(Desempenho) {
-  case
-    placar.gols_anf.numero_gols == placar.gols_vis.numero_gols,
-    placar.gols_anf.numero_gols > placar.gols_vis.numero_gols
-  {
-    True, _ -> [
+  case placar.gols_anf.numero_gols - placar.gols_vis.numero_gols {
+    num if num > 0 -> [
+      Desempenho(placar.nome_time_anf, 3, 1, num),
+      Desempenho(placar.nome_time_vis, 0, 0, -num),
+    ]
+    num if num < 0 -> [
+      Desempenho(placar.nome_time_anf, 0, 0, num),
+      Desempenho(placar.nome_time_vis, 3, 1, -num),
+    ]
+    _ -> [
       Desempenho(placar.nome_time_anf, 1, 0, 0),
       Desempenho(placar.nome_time_vis, 1, 0, 0),
-    ]
-    False, True -> [
-      Desempenho(
-        placar.nome_time_anf,
-        3,
-        1,
-        placar.gols_anf.numero_gols - placar.gols_vis.numero_gols,
-      ),
-      Desempenho(
-        placar.nome_time_vis,
-        0,
-        0,
-        placar.gols_vis.numero_gols - placar.gols_anf.numero_gols,
-      ),
-    ]
-    False, False -> [
-      Desempenho(
-        placar.nome_time_anf,
-        0,
-        0,
-        placar.gols_anf.numero_gols - placar.gols_vis.numero_gols,
-      ),
-      Desempenho(
-        placar.nome_time_vis,
-        3,
-        1,
-        placar.gols_vis.numero_gols - placar.gols_anf.numero_gols,
-      ),
     ]
   }
 }
@@ -417,27 +401,88 @@ pub fn calcula_desempenho_examples() {
   ])
 }
 
-/// Realiza a junção de *desempenhos* com *novos_desempenhos*, isto é, atualizando os *desempenhos*
-/// de um time já existente na lista a partir da outra lista com os *novos_desempenhos*.
-/// Requer que existam apenas dois desempenhos em *novos_desempenhos*.
-pub fn juncao_desempenhos(desempenhos: List(Desempenho), desempenho: Desempenho) -> List(Desempenho) {
+/// Retorna a atualização da lista de *desempenhos* a partir de *desempenho*, isto é, atualizando
+/// o desempenho do time que já está na lista ou adicionando um novo *desempenho*.
+pub fn juncao_desempenhos(
+  desempenhos: List(Desempenho),
+  desempenho: Desempenho,
+) -> List(Desempenho) {
   case desempenhos {
     [] -> [desempenho]
-    [primeiro, ..resto] -> case primeiro.nome_time == desempenho.nome_time {
-      True -> [Desempenho(primeiro.nome_time, primeiro.numero_pontos + desempenho.numero_pontos, primeiro.numero_vitorias + desempenho.numero_vitorias, primeiro.saldo_gols + desempenho.saldo_gols), ..resto]
-      False -> [primeiro, ..juncao_desempenhos(resto, desempenho)]
-    }
+    [primeiro, ..resto] ->
+      case primeiro.nome_time == desempenho.nome_time {
+        True -> [
+          Desempenho(
+            primeiro.nome_time,
+            primeiro.numero_pontos + desempenho.numero_pontos,
+            primeiro.numero_vitorias + desempenho.numero_vitorias,
+            primeiro.saldo_gols + desempenho.saldo_gols,
+          ),
+          ..resto
+        ]
+        False -> [primeiro, ..juncao_desempenhos(resto, desempenho)]
+      }
   }
 }
+
 pub fn juncao_desempenhos_examples() {
-  check.eq(juncao_desempenhos([], Desempenho("Fluminense", 1, 0, 0)), [Desempenho("Fluminense", 1, 0, 0)])
-  check.eq(juncao_desempenhos([Desempenho("Sport", 4, 1, 3), Desempenho("Coritiba", 0, 0, -3)], Desempenho("Santos", 3, 1, 3)), [Desempenho("Sport", 4, 1, 3), Desempenho("Coritiba", 0, 0, -3), Desempenho("Santos", 3, 1, 3)])
-  check.eq(juncao_desempenhos([Desempenho("Flamengo", 0, 0, -1), Desempenho("SaoPaulo", 3, 1, 1)], Desempenho("Flamengo", 3, 1, 1)), [Desempenho("Flamengo", 3, 1, 0), Desempenho("SaoPaulo", 3, 1, 1)])
-  check.eq(juncao_desempenhos([Desempenho("Palmeiras", 3, 1, 2), Desempenho("Londrina", 0, 0, -2), Desempenho("Cruzeiro", 0, 0, -3), Desempenho("Criciuma", 3, 1, 3)], Desempenho("BotaFogo", 3, 1, 2)), [Desempenho("Palmeiras", 3, 1, 2), Desempenho("Londrina", 0, 0, -2), Desempenho("Cruzeiro", 0, 0, -3), Desempenho("Criciuma", 3, 1, 3), Desempenho("BotaFogo", 3, 1, 2)])
-  check.eq(juncao_desempenhos([Desempenho("Goias", 1, 0, 0), Desempenho("Internacional", 1, 0, 0), Desempenho("AtleticoMG", 3, 1, 2), Desempenho("Paicandu", 0, 0,-2)], Desempenho("AtleticoMG", 3, 1, 1)), [Desempenho("Goias", 1, 0, 0), Desempenho("Internacional", 1, 0, 0), Desempenho("AtleticoMG", 6, 2, 3), Desempenho("Paicandu", 0, 0,-2)])
+  check.eq(juncao_desempenhos([], Desempenho("Fluminense", 1, 0, 0)), [
+    Desempenho("Fluminense", 1, 0, 0),
+  ])
+  check.eq(
+    juncao_desempenhos(
+      [Desempenho("Sport", 4, 1, 3), Desempenho("Coritiba", 0, 0, -3)],
+      Desempenho("Santos", 3, 1, 3),
+    ),
+    [
+      Desempenho("Sport", 4, 1, 3),
+      Desempenho("Coritiba", 0, 0, -3),
+      Desempenho("Santos", 3, 1, 3),
+    ],
+  )
+  check.eq(
+    juncao_desempenhos(
+      [Desempenho("Flamengo", 0, 0, -1), Desempenho("SaoPaulo", 3, 1, 1)],
+      Desempenho("Flamengo", 3, 1, 1),
+    ),
+    [Desempenho("Flamengo", 3, 1, 0), Desempenho("SaoPaulo", 3, 1, 1)],
+  )
+  check.eq(
+    juncao_desempenhos(
+      [
+        Desempenho("Palmeiras", 3, 1, 2),
+        Desempenho("Londrina", 0, 0, -2),
+        Desempenho("Cruzeiro", 0, 0, -3),
+        Desempenho("Criciuma", 3, 1, 3),
+      ],
+      Desempenho("BotaFogo", 3, 1, 2),
+    ),
+    [
+      Desempenho("Palmeiras", 3, 1, 2),
+      Desempenho("Londrina", 0, 0, -2),
+      Desempenho("Cruzeiro", 0, 0, -3),
+      Desempenho("Criciuma", 3, 1, 3),
+      Desempenho("BotaFogo", 3, 1, 2),
+    ],
+  )
+  check.eq(
+    juncao_desempenhos(
+      [
+        Desempenho("Goias", 1, 0, 0),
+        Desempenho("Internacional", 1, 0, 0),
+        Desempenho("AtleticoMG", 3, 1, 2),
+        Desempenho("Paicandu", 0, 0, -2),
+      ],
+      Desempenho("AtleticoMG", 3, 1, 1),
+    ),
+    [
+      Desempenho("Goias", 1, 0, 0),
+      Desempenho("Internacional", 1, 0, 0),
+      Desempenho("AtleticoMG", 6, 2, 3),
+      Desempenho("Paicandu", 0, 0, -2),
+    ],
+  )
 }
-
-
 /// Lista de Placares:
 /// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
 /// Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Goias", Gols(1), "AtleticoMG", Gols(0)), Placar("Sport", Gols(0), "AtleticoGO", Gols(0)),  
