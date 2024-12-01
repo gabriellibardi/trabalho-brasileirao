@@ -25,6 +25,8 @@
 // são dispostas na tabela, que é ordenada a partir desses critérios).
 
 import gleam/int
+import gleam/list
+import gleam/string
 import sgleam/check
 
 // Tipos de dados
@@ -71,13 +73,13 @@ pub fn valor_gols_examples() {
   check.eq(valor_gols(Gols(3)), 3)
 }
 
-/// Representa o placar de um jogo realizado.
+/// Representa um placar de um jogo realizado.
 pub type Placar {
   Placar(
-    anfitriao: String,
-    gols_anfitriao: Gols,
-    visitante: String,
-    gols_visitante: Gols,
+    nome_time_anf: String,
+    gols_anf: Gols,
+    nome_time_vis: String,
+    gols_vis: Gols,
   )
 }
 
@@ -91,16 +93,61 @@ pub type Desempenho {
   )
 }
 
-// Funções do Programa
+// Funções do Programa ---------------------------------------------------------------------
 
-// [lista de strings]
+// Conversão da lista de textos em uma lista de placares -----------------------------------
 
-/// Retorna uma lista de Jogos com base na *lista* de textos da entrada, ou um erro caso não
-/// seja possível.
-/// Separa o *texto* de entrada em diferentes elementos de acordo com os espaços presentes e
-/// coloca-os em uma lista.
-// para cada string em [listaErro de strings]
-// [lista dos elementos de cada string]
+/// Retorna uma lista de Placares com base na *lista* de textos da entrada, ou o erro corres-
+/// pondente caso não seja possível.
+fn cria_lista_placares(lista: List(String)) -> Result(List(Placar), Erro) {
+  case lista {
+    [] -> Ok([])
+    [primeiro, ..resto] -> {
+      case converte_para_placar(string.split(primeiro, " ")) {
+        Error(erro) -> Error(erro)
+        Ok(placar) -> {
+          case cria_lista_placares(resto) {
+            Error(erro) -> Error(erro)
+            Ok(resto_placares) -> Ok([placar, ..resto_placares])
+          }
+        }
+      }
+    }
+  }
+}
+
+pub fn cria_lista_placares_examples() {
+  check.eq(cria_lista_placares([]), Ok([]))
+  check.eq(cria_lista_placares([""]), Error(CamposInsuficientes))
+  check.eq(
+    cria_lista_placares(["Sao-Paulo 2 Palmeiras 1 Corinthians"]),
+    Error(CamposExcessivos),
+  )
+  check.eq(
+    cria_lista_placares(["Sao-Paulo -2 Palmeiras 1"]),
+    Error(NumeroGolsNegativo),
+  )
+  check.eq(
+    cria_lista_placares(["São-Paulo Palmeiras Corinthians Flamengo"]),
+    Error(FormatoGolsInvalido),
+  )
+  check.eq(
+    cria_lista_placares(["Sao-Paulo 2 Palmeiras 1"]),
+    Ok([Placar("Sao-Paulo", Gols(2), "Palmeiras", Gols(1))]),
+  )
+  check.eq(
+    cria_lista_placares([
+      "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+    ]),
+    Ok([
+      Placar("Sao-Paulo", Gols(1), "Atletico-MG", Gols(2)),
+      Placar("Flamengo", Gols(2), "Palmeiras", Gols(1)),
+      Placar("Palmeiras", Gols(0), "Sao-Paulo", Gols(0)),
+      Placar("Atletico-MG", Gols(1), "Flamengo", Gols(2)),
+    ]),
+  )
+}
 
 /// Converte os itens de *campos* em um Jogo e retorna um Result composto por um Ok com o novo
 /// Jogo, ou um Error com o  correspondente.
@@ -156,6 +203,8 @@ pub fn converte_para_placar_examples() {
   )
 }
 
+// Verificação dos placares -----------------------------------------------------------------
+
 /// Verifica se uma lista de *placares* possui alguma inconsistência, isto é, se os times de
 /// um placar possuem mesmo nome ou se um time anfitrião recebe um time visitante mais de uma
 /// vez presente, retornando um Result composto por um Ok com os *placares*, ou um Error com
@@ -165,7 +214,7 @@ pub fn verifica_placares(placares: List(Placar)) -> Result(List(Placar), Erro) {
     [] -> Ok([])
     [primeiro, ..resto] ->
       case
-        primeiro.anfitriao == primeiro.visitante,
+        primeiro.nome_time_anf == primeiro.nome_time_vis,
         repete_combinacao_times(primeiro, resto)
       {
         True, _ -> Error(TimesNomeIgual)
@@ -236,8 +285,8 @@ pub fn repete_combinacao_times(placar: Placar, placares: List(Placar)) -> Bool {
     [] -> False
     [primeiro, ..resto] ->
       {
-        placar.anfitriao == primeiro.anfitriao
-        && placar.visitante == primeiro.visitante
+        placar.nome_time_anf == primeiro.nome_time_anf
+        && placar.nome_time_vis == primeiro.nome_time_vis
       }
       || repete_combinacao_times(placar, resto)
   }
@@ -267,26 +316,75 @@ pub fn repete_combinacao_times_examples() {
   )
 }
 
-/// Retorna uma lista de Desempenhos com base nos *placares*.
-pub fn calcula_desempenhos(placares: List(Placar>) -> List(Desempenho) {
+// Obtenção dos desempenhos -----------------------------------------------------------------
 
+/// Retorna uma lista de Desempenhos com base nos *placares*.
+pub fn calcula_desempenhos(placares: List(Placar)) -> List(Desempenho) {
+  todo
 }
-pub fn calcula_desempenhos_examples() {
+
+pub fn calcula_desempenhos_() {
   check.eq(calcula_desempenhos([]), [])
-  check.eq(calcula_desempenhos([Placar("Palmeiras", Gols(3), "Internacional", Gols(3))]), [Desempenho("Palmeiras", 1, 0, 0), Desempenho("Internacional", 1, 0, 0)])
-  check.eq(calcula_desempenhos([Placar("Criciuma", Gols(2), "Goias", Gols(0)), Placar("Vitoria", Gols(2), "Gremio", Gols(3))]), [Desempenho("Criciuma", 3, 1, -2), Desempenho("Goias", 0, 0, -2), Desempenho("Vitoria", 0, 0, -1), Desempenho("Gremio", 3, 1, 1)])
-  check.eq(calcula_desempenhos([Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Paicandu", Gols(0), "Chapecoense", Gols(0)), Placar("Vasco", Gols(0), "Flamengo", Gols(1))]), [Desempenho("Flamengo", 0, 1, 0), Desempenho("AthleticoPR", 3, 1, 1), Desempenho("Paicandu", 1, 0, 0), Desempenho("Chapecoense", 1, 0, 0), Desempenho("Vasco", 0, 0, -1)])
+  check.eq(
+    calcula_desempenhos([Placar("Palmeiras", Gols(3), "Internacional", Gols(3))]),
+    [Desempenho("Palmeiras", 1, 0, 0), Desempenho("Internacional", 1, 0, 0)],
+  )
+  check.eq(
+    calcula_desempenhos([
+      Placar("Criciuma", Gols(2), "Goias", Gols(0)),
+      Placar("Vitoria", Gols(2), "Gremio", Gols(3)),
+    ]),
+    [
+      Desempenho("Criciuma", 3, 1, -2),
+      Desempenho("Goias", 0, 0, -2),
+      Desempenho("Vitoria", 0, 0, -1),
+      Desempenho("Gremio", 3, 1, 1),
+    ],
+  )
+  check.eq(
+    calcula_desempenhos([
+      Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)),
+      Placar("Paicandu", Gols(0), "Chapecoense", Gols(0)),
+      Placar("Vasco", Gols(0), "Flamengo", Gols(1)),
+    ]),
+    [
+      Desempenho("Flamengo", 0, 1, 0),
+      Desempenho("AthleticoPR", 3, 1, 1),
+      Desempenho("Paicandu", 1, 0, 0),
+      Desempenho("Chapecoense", 1, 0, 0),
+      Desempenho("Vasco", 0, 0, -1),
+    ],
+  )
 }
 
 /// Retorna uma lista composta por dois Desempenhos com base no *placar* e dos times presentes.
 pub fn calcula_desempenho(placar: Placar) -> List(Desempenho) {
+  todo
+}
 
+pub fn calcula_desempenho_() {
+  check.eq(calcula_desempenho(Placar("Sport", Gols(2), "Cruzeiro", Gols(1))), [
+    Desempenho("Sport", 3, 1, 1),
+    Desempenho("Cruzeiro", 0, 0, -1),
+  ])
+  check.eq(calcula_desempenho(Placar("Maringa", Gols(1), "BotaFogo", Gols(3))), [
+    Desempenho("Maringa", 0, 0, -2),
+    Desempenho("BotaFogo", 3, 1, 2),
+  ])
+  check.eq(calcula_desempenho(Placar("Cuiaba", Gols(2), "Bahia", Gols(2))), [
+    Desempenho("Cuiaba", 1, 0, 0),
+    Desempenho("Bahia", 1, 0, 0),
+  ])
 }
-pub fn calcula_desempenho_examples() {
-  check.eq(calcula_desempenho(Placar("Sport", Gols(2), "Cruzeiro", Gols(1))), [Desempenho("Sport", 3, 1, 1), Desempenho("Cruzeiro", 0, 0, -1)])
-  check.eq(calcula_desempenho(Placar("Maringa", Gols(1), "BotaFogo", Gols(3))), [Desempenho("Maringa", 0, 0, -2), Desempenho("BotaFogo", 3, 1, 2)])
-  check.eq(calcula_desempenho(Placar("Cuiaba", Gols(2), "Bahia", Gols(2))), [Desempenho("Cuiaba", 1, 0, 0), Desempenho("Bahia", 1, 0, 0)])
-}
+
+// Ordenação dos desempenhos ----------------------------------------------------------------
+
+
+
+
+
+
+
 
 /// Lista de Placares:
 /// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
