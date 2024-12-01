@@ -319,7 +319,12 @@ pub fn repete_combinacao_times_examples() {
 
 /// Retorna uma lista de Desempenhos com base nos *placares*.
 pub fn calcula_desempenhos(placares: List(Placar)) -> List(Desempenho) {
-  todo
+  case placares {
+    [] -> []
+    [primeiro, ..resto] -> case calcula_desempenho(primeiro) {
+      todo
+    }
+  }
 }
 
 pub fn calcula_desempenhos_() {
