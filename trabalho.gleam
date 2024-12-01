@@ -411,6 +411,28 @@ pub fn calcula_desempenho_examples() {
     Desempenho("Bahia", 1, 0, 0),
   ])
 }
+
+/// Realiza a junção de *desempenhos* com *novos_desempenhos*, isto é, atualizando os *desempenhos*
+/// de um time já existente na lista a partir da outra lista com os *novos_desempenhos*.
+/// Requer que existam apenas dois desempenhos em *novos_desempenhos*.
+pub fn juncao_desempenhos(desempenhos: List(Desempenho), desempenho: Desempenho) -> List(Desempenho) {
+  case desempenhos {
+    [] -> [desempenho]
+    [primeiro, ..resto] -> case primeiro.nome_time == desempenho.nome_time {
+      True -> [Desempenho(primeiro.nome_time, primeiro.numero_pontos + desempenho.numero_pontos, primeiro.numero_vitorias + desempenho.numero_vitorias, primeiro.saldo_gols + desempenho.saldo_gols), ..resto]
+      False -> [primeiro, ..juncao_desempenhos(resto, desempenho)]
+    }
+  }
+}
+pub fn juncao_desempenhos_examples() {
+  check.eq(juncao_desempenhos([], Desempenho("Fluminense", 1, 0, 0)), [Desempenho("Fluminense", 1, 0, 0)])
+  check.eq(juncao_desempenhos([Desempenho("Sport", 4, 1, 3), Desempenho("Coritiba", 0, 0, -3)], Desempenho("Santos", 3, 1, 3)), [Desempenho("Sport", 4, 1, 3), Desempenho("Coritiba", 0, 0, -3), Desempenho("Santos", 3, 1, 3)])
+  check.eq(juncao_desempenhos([Desempenho("Flamengo", 0, 0, -1), Desempenho("SaoPaulo", 3, 1, 1)], Desempenho("Flamengo", 3, 1, 1)), [Desempenho("Flamengo", 3, 1, 0), Desempenho("SaoPaulo", 3, 1, 1)])
+  check.eq(juncao_desempenhos([Desempenho("Palmeiras", 3, 1, 2), Desempenho("Londrina", 0, 0, -2), Desempenho("Cruzeiro", 0, 0, -3), Desempenho("Criciuma", 3, 1, 3)], Desempenho("BotaFogo", 3, 1, 2)), [Desempenho("Palmeiras", 3, 1, 2), Desempenho("Londrina", 0, 0, -2), Desempenho("Cruzeiro", 0, 0, -3), Desempenho("Criciuma", 3, 1, 3), Desempenho("BotaFogo", 3, 1, 2)])
+  check.eq(juncao_desempenhos([Desempenho("Goias", 1, 0, 0), Desempenho("Internacional", 1, 0, 0), Desempenho("AtleticoMG", 3, 1, 2), Desempenho("Paicandu", 0, 0,-2)], Desempenho("AtleticoMG", 3, 1, 1)), [Desempenho("Goias", 1, 0, 0), Desempenho("Internacional", 1, 0, 0), Desempenho("AtleticoMG", 6, 2, 3), Desempenho("Paicandu", 0, 0,-2)])
+}
+
+
 /// Lista de Placares:
 /// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
 /// Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Goias", Gols(1), "AtleticoMG", Gols(0)), Placar("Sport", Gols(0), "AtleticoGO", Gols(0)),  
