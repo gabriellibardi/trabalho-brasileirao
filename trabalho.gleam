@@ -484,6 +484,7 @@ pub fn juncao_desempenhos_examples() {
     ],
   )
 }
+
 /// Lista de Placares:
 /// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
 /// Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Goias", Gols(1), "AtleticoMG", Gols(0)), Placar("Sport", Gols(0), "AtleticoGO", Gols(0)),  
@@ -494,7 +495,6 @@ pub fn juncao_desempenhos_examples() {
 /// Placar("Cuiaba", Gols(4), "Corinthians", Gols(0)), Placar("Santos", Gols(1), "Maringa", Gols(5)), Placar("Cuiaba", Gols(2), "Bahia", Gols(2)), 
 /// Placar("Vasco", Gols(0), "Flamengo", Gols(1)), Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)), Placar("BotaFogo", Gols(1), "Coritiba", Gols(3))
 /// Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)), Placar("Criciuma", Gols(2), "Goias", Gols(0)), Placar("Vitoria", Gols(2), "Gremio", Gols(3)), 
-
 // Ordenação dos desempenhos ----------------------------------------------------------------
 
 /// Retorna a *lista_desempenhos* ordenada com base nos desempenhos dos times. Caso dois times
@@ -670,5 +670,59 @@ pub fn encontra_melhor_examples() {
       Desempenho("Cruzeiro", 0, 0, 1),
     ),
     Desempenho("Cruzeiro", 0, 0, 1),
+  )
+}
+
+// Conversão da lista de desempenhos para uma de strings ------------------------------------
+
+/// Retorna uma lista de strings composta pela conversão de cada elemento de *desempenhos*, que
+/// é feita convertendo os itens de cada desempenho para string e concatenando-os com um espaço
+/// entre cada um.
+pub fn converte_desempenhos_string(
+  desempenhos: List(Desempenho),
+) -> List(String) {
+  case desempenhos {
+    [] -> []
+    [primeiro, ..resto] -> [
+      primeiro.nome_time
+        <> " "
+        <> int.to_string(primeiro.numero_pontos)
+        <> " "
+        <> int.to_string(primeiro.numero_vitorias)
+        <> " "
+        <> int.to_string(primeiro.saldo_gols),
+      ..converte_desempenhos_string(resto)
+    ]
+  }
+}
+
+pub fn converte_desempenhos_string_examples() {
+  check.eq(converte_desempenhos_string([]), [])
+  check.eq(converte_desempenhos_string([Desempenho("Flamengo", 4, 1, 2)]), [
+    "Flamengo 4 1 2",
+  ])
+  check.eq(
+    converte_desempenhos_string([
+      Desempenho("Corinthians", 3, 1, 1),
+      Desempenho("SaoPaulo", 0, 0, -1),
+    ]),
+    ["Corinthians 3 1 1", "SaoPaulo 0 0 -1"],
+  )
+  check.eq(
+    converte_desempenhos_string([
+      Desempenho("Palmeiras", 6, 2, 3),
+      Desempenho("Criciuma", 0, 0, -1),
+      Desempenho("Londrina", 0, 0, -2),
+    ]),
+    ["Palmeiras 6 2 3", "Criciuma 0 0 -1", "Londrina 0 0 -2"],
+  )
+  check.eq(
+    converte_desempenhos_string([
+      Desempenho("Bahia", 3, 1, 3),
+      Desempenho("Fortaleza", 0, 0, -3),
+      Desempenho("AthleticoPR", 1, 0, 0),
+      Desempenho("Maringa", 1, 0, 0),
+    ]),
+    ["Bahia 3 1 3", "Fortaleza 0 0 -3", "AthleticoPR 1 0 0", "Maringa 1 0 0"],
   )
 }
