@@ -95,11 +95,105 @@ pub type Desempenho {
 
 // Funções do Programa --------------------------------------------------------------------- ---------------------------------------------------------------------
 
+// Função principal do programa
+pub fn main(lista: List(String)) -> Result(List(String), Erro) {
+  case cria_lista_placares(lista) {
+    Error(erro) -> Error(erro)
+    Ok(lista_placares) ->
+      case verifica_placares(lista_placares) {
+        Error(erro) -> Error(erro)
+        Ok(lista_verificada) ->
+          Ok(
+            converte_desempenhos_string(
+              ordena_desempenhos(calcula_desempenhos(lista_verificada)),
+            ),
+          )
+      }
+  }
+}
+
+pub fn main_examples() {
+  check.eq(main([]), Ok([]))
+  check.eq(main([""]), Error(CamposInsuficientes))
+  check.eq(main(["Palmeiras 2 Corinthians"]), Error(CamposInsuficientes))
+  check.eq(
+    main(["Bahia 2 Vasco 3", "Flamengo 0 Vasco 0 3"]),
+    Error(CamposExcessivos),
+  )
+  check.eq(
+    main(["Maringa 2 Cuiaba 3", "Santos 0 Vasco 0", "Fluminense 3 Bahia -2"]),
+    Error(NumeroGolsNegativo),
+  )
+  check.eq(
+    main([
+      "Vasco 2 Cruzeiro 3", "Flamengo zero Juventus 0", "Fluminense 3 Bahia 2",
+    ]),
+    Error(FormatoGolsInvalido),
+  )
+  check.eq(
+    main([
+      "Gremio 2 Bragantino 3", "Flamengo 0 Juventude 0",
+      "Fluminense 3 Fluminense 2",
+    ]),
+    Error(TimesNomeIgual),
+  )
+  check.eq(
+    main([
+      "Vitoria 2 Corinthians 3", "Flamengo 0 Vasco 0", "Vitoria 3 Corinthians 2",
+    ]),
+    Error(JogosEmExcesso),
+  )
+  check.eq(
+    main([
+      "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+    ]),
+    Ok([
+      "Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1",
+      "Sao-Paulo 1 0 -1",
+    ]),
+  )
+  check.eq(
+    main(["Flamengo 3 Criciuma 4"]),
+    Ok(["Criciuma 3 1 1", "Flamengo 0 0 -1"]),
+  )
+  check.eq(
+    main(["Maringa 2 Londrina 1"]),
+    Ok(["Maringa 3 1 1", "Londrina 0 0 -1"]),
+  )
+  check.eq(main(["Sport 0 Bahia 0"]), Ok(["Bahia 1 0 0", "Sport 1 0 0"]))
+  check.eq(
+    main(["AthleticoPR 2 AtleticoGO 1", "Palmeiras 0 Corinthians 3"]),
+    Ok([
+      "Corinthians 3 1 3", "AthleticoPR 3 1 1", "AtleticoGO 0 0 -1",
+      "Palmeiras 0 0 -3",
+    ]),
+  )
+  check.eq(
+    main([
+      "Vasco 1 Coritiba 2", "BotaFogo 3 Gremio 1", "Coritiba 1 Internacional 0",
+    ]),
+    Ok([
+      "Coritiba 6 2 2", "BotaFogo 3 1 2", "Internacional 0 0 -1", "Vasco 0 0 -1",
+      "Gremio 0 0 -2",
+    ]),
+  )
+  check.eq(
+    main([
+      "Vitoria 3 Fluminense 0", "Fluminense 0 Marialva 0",
+      "Marialva 1 Flamengo 1", "Flamengo 2 Marialva 2",
+    ]),
+    Ok([
+      "Vitoria 3 1 3", "Marialva 3 0 0", "Flamengo 2 0 0", "Fluminense 1 0 -3",
+    ]),
+  )
+}
+
 // Conversão da lista de textos em uma lista de placares -----------------------------------
 
 /// Retorna uma lista de Placares com base na *lista* de textos da entrada, ou o Erro corres-
 /// pondente caso não seja possível.
-fn cria_lista_placares(lista: List(String)) -> Result(List(Placar), Erro) {
+pub fn cria_lista_placares(lista: List(String)) -> Result(List(Placar), Erro) {
   case lista {
     [] -> Ok([])
     [primeiro, ..resto] -> {
@@ -485,16 +579,6 @@ pub fn juncao_desempenhos_examples() {
   )
 }
 
-/// Lista de Placares:
-/// Placar("Maringa", Gols(1), "BotaFogo", Gols(3)), Placar("Flamengo", Gols(0), "AthleticoPR", Gols(1)), Placar("Vasco", Gols(2), "Internacional", Gols(0)),
-/// Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)), Placar("Goias", Gols(1), "AtleticoMG", Gols(0)), Placar("Sport", Gols(0), "AtleticoGO", Gols(0)),  
-/// Placar("Coritiba", Gols(1), "Fluminense", Gols(1)), Placar("Fortaleza", Gols(3), "Bahia", Gols(2)), Placar("Corinthians", Gols(4), "SaoPaulo", Gols(1)), 
-/// Placar("Vitoria", Gols(2), "Chapecoense", Gols(1)), Placar("Paicandu", Gols(1), "Londrina", Gols(2)), Placar("Juventude", Gols(2), "Criciuma", Gols(2)), 
-/// Placar("SaoPaulo", Gols(1), "Palmeiras", Gols(0)), Placar("AthleticoPR", Gols(3), "Santos", Gols(0)), Placar("Palmeiras", Gols(3), "Internacional", Gols(3)),
-/// Placar("AtleticoGO", Gols(2), "Juventude", Gols(4)), Placar("Paicandu", Gols(0), "Chapecoense", Gols(0)), Placar("Sport", Gols(2), "Cruzeiro", Gols(1)),  
-/// Placar("Cuiaba", Gols(4), "Corinthians", Gols(0)), Placar("Santos", Gols(1), "Maringa", Gols(5)), Placar("Cuiaba", Gols(2), "Bahia", Gols(2)), 
-/// Placar("Vasco", Gols(0), "Flamengo", Gols(1)), Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)), Placar("BotaFogo", Gols(1), "Coritiba", Gols(3))
-/// Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)), Placar("Criciuma", Gols(2), "Goias", Gols(0)), Placar("Vitoria", Gols(2), "Gremio", Gols(3)), 
 // Ordenação dos desempenhos ----------------------------------------------------------------
 
 /// Retorna a *lista_desempenhos* ordenada com base nos desempenhos dos times. Caso dois times
@@ -627,8 +711,7 @@ pub fn encontra_melhor(
                 string.compare(desempenho1.nome_time, desempenho2.nome_time)
               {
                 order.Lt -> desempenho1
-                order.Gt -> desempenho2
-                order.Eq -> desempenho1
+                _ -> desempenho2
               }
           }
       }
