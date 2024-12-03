@@ -246,23 +246,18 @@ pub fn cria_lista_placares_examples() {
 /// Retorna um Placar com base na *lista* de textos da entrada, ou o Erro correspondente.
 pub fn converte_para_placar(campos: List(String)) -> Result(Placar, Erro) {
   case campos {
-    [] -> Error(CamposInsuficientes)
-    [_] -> Error(CamposInsuficientes)
-    [_, _] -> Error(CamposInsuficientes)
-    [_, _, _] -> Error(CamposInsuficientes)
-    [_, _, _, _, _, ..] -> Error(CamposExcessivos)
     [anf, gols_anf, vis, gols_vis] ->
       case int.parse(gols_anf), int.parse(gols_vis) {
-        Error(_), _ -> Error(FormatoGolsInvalido)
-        _, Error(_) -> Error(FormatoGolsInvalido)
         Ok(gols_anf_ok), Ok(gols_vis_ok) ->
           case gols(gols_anf_ok), gols(gols_vis_ok) {
-            Error(erro), _ -> Error(erro)
-            _, Error(erro) -> Error(erro)
             Ok(gols_anf_tad), Ok(gols_vis_tad) ->
               Ok(Placar(anf, gols_anf_tad, vis, gols_vis_tad))
+            _, _ -> Error(NumeroGolsNegativo)
           }
+        _, _ -> Error(FormatoGolsInvalido)
       }
+    [_, _, _, _, _, ..] -> Error(CamposExcessivos)
+    _ -> Error(CamposInsuficientes)
   }
 }
 
@@ -417,14 +412,12 @@ pub fn calcula_desempenhos(placares: List(Placar)) -> List(Desempenho) {
     [] -> []
     [primeiro, ..resto] ->
       case calcula_desempenho(primeiro) {
-        [] -> []
-        [_] -> []
-        [_, _, _, ..] -> []
         [desempenho_anf, desemepenho_vis] ->
           juncao_desempenhos(
             juncao_desempenhos(calcula_desempenhos(resto), desempenho_anf),
             desemepenho_vis,
           )
+        _ -> []
       }
   }
 }
