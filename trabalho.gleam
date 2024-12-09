@@ -25,7 +25,7 @@
 // são dispostas na tabela, que é ordenada a partir desses critérios).
 
 import gleam/int
-import gleam/order
+import gleam/order.{Gt, Lt}
 import gleam/string
 import sgleam/check
 
@@ -680,33 +680,20 @@ pub fn encontra_melhor(
   desempenho2: Desempenho,
 ) -> Desempenho {
   case
-    desempenho1.numero_pontos > desempenho2.numero_pontos,
-    desempenho1.numero_pontos < desempenho2.numero_pontos
+    int.compare(desempenho1.numero_pontos, desempenho2.numero_pontos),
+    int.compare(desempenho1.numero_vitorias, desempenho2.numero_vitorias),
+    int.compare(desempenho1.saldo_gols, desempenho2.saldo_gols)
   {
-    True, _ -> desempenho1
-    False, True -> desempenho2
-    False, False ->
-      case
-        desempenho1.numero_vitorias > desempenho2.numero_vitorias,
-        desempenho1.numero_vitorias < desempenho2.numero_vitorias
-      {
-        True, _ -> desempenho1
-        False, True -> desempenho2
-        False, False ->
-          case
-            desempenho1.saldo_gols > desempenho2.saldo_gols,
-            desempenho1.saldo_gols < desempenho2.saldo_gols
-          {
-            True, _ -> desempenho1
-            False, True -> desempenho2
-            False, False ->
-              case
-                string.compare(desempenho1.nome_time, desempenho2.nome_time)
-              {
-                order.Lt -> desempenho1
-                _ -> desempenho2
-              }
-          }
+    Gt, _, _ -> desempenho1
+    Lt, _, _ -> desempenho2
+    _, Gt, _ -> desempenho1
+    _, Lt, _ -> desempenho2
+    _, _, Gt -> desempenho1
+    _, _, Lt -> desempenho2
+    _, _, _ ->
+      case string.compare(desempenho1.nome_time, desempenho2.nome_time) {
+        Lt -> desempenho1
+        _ -> desempenho2
       }
   }
 }
