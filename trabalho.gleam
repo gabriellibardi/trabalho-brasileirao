@@ -100,12 +100,12 @@ pub fn main(lista: List(String)) -> Result(List(String), Erro) {
   case cria_lista_placares(lista) {
     Error(erro) -> Error(erro)
     Ok(lista_placares) ->
-      case verifica_placares(lista_placares) {
-        Error(erro) -> Error(erro)
-        Ok(lista_verificada) ->
+      case verifica_repeticao_placares(lista_placares) {
+        True -> Error(JogosEmExcesso)
+        False ->
           Ok(
             converte_desempenhos_string(
-              ordena_desempenhos(calcula_desempenhos(lista_verificada)),
+              ordena_desempenhos(calcula_desempenhos(lista_placares)),
             ),
           )
       }
@@ -243,18 +243,20 @@ pub fn cria_lista_placares_examples() {
   )
 }
 
-/// Retorna um Placar com base na *lista* de textos da entrada, ou o Erro correspondente.
+/// Retorna um Placar com base na *lista* de textos da entrada, ou o Erro correspondente
+/// encontrado durante o processo.
 pub fn converte_para_placar(campos: List(String)) -> Result(Placar, Erro) {
   case campos {
     [anf, gols_anf, vis, gols_vis] ->
-      case int.parse(gols_anf), int.parse(gols_vis) {
-        Ok(gols_anf_ok), Ok(gols_vis_ok) ->
+      case anf == vis, int.parse(gols_anf), int.parse(gols_vis) {
+        True, _, _ ->  Error(TimesNomeIgual)
+        _, Ok(gols_anf_ok), Ok(gols_vis_ok) ->
           case gols(gols_anf_ok), gols(gols_vis_ok) {
             Ok(gols_anf_tad), Ok(gols_vis_tad) ->
               Ok(Placar(anf, gols_anf_tad, vis, gols_vis_tad))
             _, _ -> Error(NumeroGolsNegativo)
           }
-        _, _ -> Error(FormatoGolsInvalido)
+        _, _, _ -> Error(FormatoGolsInvalido)
       }
     [_, _, _, _, _, ..] -> Error(CamposExcessivos)
     _ -> Error(CamposInsuficientes)
@@ -273,6 +275,7 @@ pub fn converte_para_placar_examples() {
     converte_para_placar(["Corinthians", "1", "Coritiba", "3", "BotaFogo"]),
     Error(CamposExcessivos),
   )
+  check.eq(converte_para_placar(["Coritiba", "2", "Coritiba", "1"]), Error(TimesNomeIgual))
   check.eq(
     converte_para_placar(["SaoPaulo", "dois", "Palmeiras", "3"]),
     Error(FormatoGolsInvalido),
@@ -291,78 +294,46 @@ pub fn converte_para_placar_examples() {
   )
 }
 
-// Verificação dos placares -----------------------------------------------------------------
-
-/// Verifica se uma lista de *placares* possui alguma inconsistência, isto é, se os times de
-/// um placar possuem mesmo nome ou se um time anfitrião recebe um mesmo time visitante mais
-/// de uma vez, retornando os mesmos *placares* caso não haja inconsistências ou o Erro cor-
-/// respondente.
-pub fn verifica_placares(placares: List(Placar)) -> Result(List(Placar), Erro) {
+/// Verifica se uma lista de *placares* possui jogos em excesso, isto é, se um time anfitrião
+/// recebe um mesmo time visitante mais de uma vez, retornando os mesmos False caso não haja
+/// repetição, ou True caso haja a inconsistência.
+pub fn verifica_repeticao_placares(placares: List(Placar)) -> Bool {
   case placares {
-    [] -> Ok([])
-    [primeiro, ..resto] ->
-      case
-        primeiro.nome_time_anf == primeiro.nome_time_vis,
-        repete_combinacao_times(primeiro, resto)
-      {
-        True, _ -> Error(TimesNomeIgual)
-        False, True -> Error(JogosEmExcesso)
-        False, False ->
-          case verifica_placares(resto) {
-            Error(erro) -> Error(erro)
-            Ok(placares_ok) -> Ok([primeiro, ..placares_ok])
-          }
-      }
+    [] -> False
+    [primeiro, ..resto] -> repete_combinacao_times(primeiro, resto) || verifica_repeticao_placares(resto)
   }
 }
 
-pub fn verifica_placares_examples() {
-  check.eq(verifica_placares([]), Ok([]))
+pub fn verifica_repeticao_placares_examples() {
+  check.eq(verifica_repeticao_placares([]), False)
   check.eq(
-    verifica_placares([
+    verifica_repeticao_placares([
       Placar("Coritiba", Gols(1), "Fluminense", Gols(1)),
       Placar("Fortaleza", Gols(3), "Bahia", Gols(2)),
     ]),
-    Ok([
-      Placar("Coritiba", Gols(1), "Fluminense", Gols(1)),
-      Placar("Fortaleza", Gols(3), "Bahia", Gols(2)),
-    ]),
+    False,
   )
   check.eq(
-    verifica_placares([
+    verifica_repeticao_placares([
       Placar("Gremio", Gols(2), "Cruzeiro", Gols(5)),
       Placar("Gremio", Gols(1), "Cruzeiro", Gols(0)),
     ]),
-    Error(JogosEmExcesso),
+    True,
   )
   check.eq(
-    verifica_placares([
-      Placar("AthleticoPR", Gols(3), "Internacional", Gols(0)),
-      Placar("Palmeiras", Gols(3), "Palmeiras", Gols(3)),
-    ]),
-    Error(TimesNomeIgual),
-  )
-  check.eq(
-    verifica_placares([
+    verifica_repeticao_placares([
       Placar("Vasco", Gols(0), "Flamengo", Gols(1)),
       Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)),
     ]),
-    Ok([
-      Placar("Vasco", Gols(0), "Flamengo", Gols(1)),
-      Placar("Fortaleza", Gols(2), "Fluminense", Gols(2)),
-    ]),
+    False,
   )
   check.eq(
-    verifica_placares([
+    verifica_repeticao_placares([
       Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)),
       Placar("Criciuma", Gols(2), "Goias", Gols(0)),
       Placar("Vitoria", Gols(2), "Gremio", Gols(3)),
     ]),
-    Ok([
-      Placar("AtleticoMG", Gols(1), "Londrina", Gols(0)),
-      Placar("Criciuma", Gols(2), "Goias", Gols(0)),
-      Placar("Vitoria", Gols(2), "Gremio", Gols(3)),
-    ]),
+    False,
   )
 }
 
