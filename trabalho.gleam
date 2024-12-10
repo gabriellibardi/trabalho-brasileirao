@@ -249,10 +249,11 @@ pub fn converte_para_placar(campos: List(String)) -> Result(Placar, Erro) {
   case campos {
     [anf, gols_anf, vis, gols_vis] ->
       case anf == vis, parse_gols(gols_anf), parse_gols(gols_vis) {
-        True, _, _ ->  Error(TimesNomeIgual)
+        True, _, _ -> Error(TimesNomeIgual)
         _, Error(erro), _ -> Error(erro)
         _, _, Error(erro) -> Error(erro)
-        _, Ok(gols_anf_ok), Ok(gols_vis_ok) -> Ok(Placar(anf, gols_anf_ok, vis, gols_vis_ok))
+        _, Ok(gols_anf_ok), Ok(gols_vis_ok) ->
+          Ok(Placar(anf, gols_anf_ok, vis, gols_vis_ok))
       }
     [_, _, _, _, _, ..] -> Error(CamposExcessivos)
     _ -> Error(CamposInsuficientes)
@@ -271,7 +272,10 @@ pub fn converte_para_placar_examples() {
     converte_para_placar(["Corinthians", "1", "Coritiba", "3", "BotaFogo"]),
     Error(CamposExcessivos),
   )
-  check.eq(converte_para_placar(["Coritiba", "2", "Coritiba", "1"]), Error(TimesNomeIgual))
+  check.eq(
+    converte_para_placar(["Coritiba", "2", "Coritiba", "1"]),
+    Error(TimesNomeIgual),
+  )
   check.eq(
     converte_para_placar(["SaoPaulo", "dois", "Palmeiras", "3"]),
     Error(FormatoGolsInvalido),
@@ -294,13 +298,15 @@ pub fn converte_para_placar_examples() {
 /// zar uma intância a partir da entrada.
 pub fn parse_gols(gols_str: String) -> Result(Gol, Erro) {
   case int.parse(gols_str) {
-    Ok(gols_conv) -> case gol(gols_conv) {
-      Ok(gols_inst) -> Ok(gols_inst)
-      Error(erro) -> Error(erro)
-    }
+    Ok(gols_conv) ->
+      case gol(gols_conv) {
+        Ok(gols_inst) -> Ok(gols_inst)
+        Error(erro) -> Error(erro)
+      }
     Error(_) -> Error(FormatoGolsInvalido)
   }
 }
+
 pub fn parse_gols_examples() {
   check.eq(parse_gols(""), Error(FormatoGolsInvalido))
   check.eq(parse_gols("Flamengo"), Error(FormatoGolsInvalido))
@@ -317,7 +323,9 @@ pub fn parse_gols_examples() {
 pub fn verifica_repeticao_placares(placares: List(Placar)) -> Bool {
   case placares {
     [] -> False
-    [primeiro, ..resto] -> repete_combinacao_times(primeiro, resto) || verifica_repeticao_placares(resto)
+    [primeiro, ..resto] ->
+      repete_combinacao_times(primeiro, resto)
+      || verifica_repeticao_placares(resto)
   }
 }
 
