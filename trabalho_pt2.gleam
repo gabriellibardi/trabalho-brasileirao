@@ -305,7 +305,7 @@ pub fn parse_gols_examples() {
 /// recebe um mesmo time visitante mais de uma vez, retornando os mesmos False caso não haja
 /// repetição, ou True caso haja a inconsistência.
 pub fn verifica_repeticao_placares(placares: List(Placar)) -> Bool {
-  list.any(placares, repete_combinacao_times(_, placares))
+  todo
 }
 
 pub fn verifica_repeticao_placares_examples() {
@@ -379,6 +379,15 @@ pub fn mesma_combinacao_examples() {
   check.eq(mesma_combinacao(Placar("Flamengo", Gol(0), "Palmeiras", Gol(3)), Placar("Coritiba", Gol(2), "AthleticoPR", Gol(2))), False)
   check.eq(mesma_combinacao(Placar("Cuiaba", Gol(1), "Fortaleza", Gol(2)), Placar("Fortaleza", Gol(3), "Cuiaba", Gol(4))), False)
   check.eq(mesma_combinacao(Placar("Corinthians", Gol(3), "Criciuma", Gol(1)), Placar("Corinthians", Gol(1), "Criciuma", Gol(0))), True)
+}
+
+/// Remove o primeiro elemento da lista de *placares*. Caso não haja placares a remover,
+/// devolve lista vazia.
+pub fn remove_primeiro_placar(placares: List(Placar)) -> List(Placar) {
+  case placares {
+    [_, ..r] -> r
+    _ -> []
+  }
 }
 
 // Obtenção dos desempenhos -----------------------------------------------------------------
