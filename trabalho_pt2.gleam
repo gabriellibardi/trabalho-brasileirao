@@ -305,12 +305,7 @@ pub fn parse_gols_examples() {
 /// recebe um mesmo time visitante mais de uma vez, retornando os mesmos False caso não haja
 /// repetição, ou True caso haja a inconsistência.
 pub fn verifica_repeticao_placares(placares: List(Placar)) -> Bool {
-  case placares {
-    [] -> False
-    [primeiro, ..resto] ->
-      repete_combinacao_times(primeiro, resto)
-      || verifica_repeticao_placares(resto)
-  }
+  list.any(placares, repete_combinacao_times(_, placares))
 }
 
 pub fn verifica_repeticao_placares_examples() {
@@ -349,15 +344,7 @@ pub fn verifica_repeticao_placares_examples() {
 /// Verifica se a combinação time anfitrião-visitante do *placar* repete na lista de *placares*,
 /// retornando True caso repita e False caso não repita.
 pub fn repete_combinacao_times(placar: Placar, placares: List(Placar)) -> Bool {
-  case placares {
-    [] -> False
-    [primeiro, ..resto] ->
-      {
-        placar.nome_time_anf == primeiro.nome_time_anf
-        && placar.nome_time_vis == primeiro.nome_time_vis
-      }
-      || repete_combinacao_times(placar, resto)
-  }
+  list.any(placares, mesma_combinacao(_, placar))
 }
 
 pub fn repete_combinacao_times_examples() {
@@ -382,6 +369,16 @@ pub fn repete_combinacao_times_examples() {
     ]),
     True,
   )
+}
+
+/// Verifica se o *placar1* possui a mesma combinação de times que o *placar2*.
+pub fn mesma_combinacao(placar1: Placar, placar2: Placar) -> Bool {
+  placar1.nome_time_anf == placar2.nome_time_anf && placar1.nome_time_vis == placar2.nome_time_vis
+}
+pub fn mesma_combinacao_examples() {
+  check.eq(mesma_combinacao(Placar("Flamengo", Gol(0), "Palmeiras", Gol(3)), Placar("Coritiba", Gol(2), "AthleticoPR", Gol(2))), False)
+  check.eq(mesma_combinacao(Placar("Cuiaba", Gol(1), "Fortaleza", Gol(2)), Placar("Fortaleza", Gol(3), "Cuiaba", Gol(4))), False)
+  check.eq(mesma_combinacao(Placar("Corinthians", Gol(3), "Criciuma", Gol(1)), Placar("Corinthians", Gol(1), "Criciuma", Gol(0))), True)
 }
 
 // Obtenção dos desempenhos -----------------------------------------------------------------
