@@ -25,7 +25,9 @@
 // são dispostas na tabela, que é ordenada a partir desses critérios).
 
 import gleam/int
+import gleam/list
 import gleam/order.{Lt}
+import gleam/result
 import gleam/string
 import sgleam/check
 
@@ -194,20 +196,8 @@ pub fn main_examples() {
 /// Retorna uma lista de Placares com base na *lista* de textos da entrada, ou o Erro corres-
 /// pondente caso não seja possível.
 pub fn cria_lista_placares(lista: List(String)) -> Result(List(Placar), Erro) {
-  case lista {
-    [] -> Ok([])
-    [primeiro, ..resto] -> {
-      case converte_para_placar(string.split(primeiro, " ")) {
-        Error(erro) -> Error(erro)
-        Ok(placar) -> {
-          case cria_lista_placares(resto) {
-            Error(erro) -> Error(erro)
-            Ok(resto_placares) -> Ok([placar, ..resto_placares])
-          }
-        }
-      }
-    }
-  }
+  list.map(lista, string.split(_, " "))
+  |> list.try_map(converte_para_placar)
 }
 
 pub fn cria_lista_placares_examples() {
@@ -247,14 +237,12 @@ pub fn cria_lista_placares_examples() {
 /// encontrado durante o processo.
 pub fn converte_para_placar(campos: List(String)) -> Result(Placar, Erro) {
   case campos {
-    [anf, gols_anf, vis, gols_vis] ->
-      case anf == vis, parse_gols(gols_anf), parse_gols(gols_vis) {
-        True, _, _ -> Error(TimesNomeIgual)
-        _, Error(erro), _ -> Error(erro)
-        _, _, Error(erro) -> Error(erro)
-        _, Ok(gols_anf_ok), Ok(gols_vis_ok) ->
-          Ok(Placar(anf, gols_anf_ok, vis, gols_vis_ok))
-      }
+    [anf, _, vis, _] if anf == vis -> Error(TimesNomeIgual)
+    [anf, gols_anf, vis, gols_vis] -> {
+      use gols_anf_typ <- result.try(parse_gols(gols_anf))
+      use gols_vis_typ <- result.try(parse_gols(gols_vis))
+      Ok(Placar(anf, gols_anf_typ, vis, gols_vis_typ))
+    }
     [_, _, _, _, _, ..] -> Error(CamposExcessivos)
     _ -> Error(CamposInsuficientes)
   }
@@ -298,11 +286,7 @@ pub fn converte_para_placar_examples() {
 /// zar uma intância a partir da entrada.
 pub fn parse_gols(gols_str: String) -> Result(Gol, Erro) {
   case int.parse(gols_str) {
-    Ok(gols_conv) ->
-      case gol(gols_conv) {
-        Ok(gols_inst) -> Ok(gols_inst)
-        Error(erro) -> Error(erro)
-      }
+    Ok(gols_conv) -> result.try(Ok(gols_conv), gol(_))
     Error(_) -> Error(FormatoGolsInvalido)
   }
 }
