@@ -579,10 +579,7 @@ pub fn juncao_desempenhos_examples() {
 pub fn ordena_desempenhos(
   lista_desempenhos: List(Desempenho),
 ) -> List(Desempenho) {
-  case lista_desempenhos {
-    [] -> []
-    [primeiro, ..resto] -> insere_ordenado(primeiro, ordena_desempenhos(resto))
-  }
+  list.fold(lista_desempenhos, [], insere_ordenado)
 }
 
 pub fn ordena_desempenhos_examples() {
@@ -625,8 +622,8 @@ pub fn ordena_desempenhos_examples() {
 /// regras de ordenação: número de pontos, número de vitórias, saldo de gols e ordem alfabética.
 /// É necessário que *lista_desempenhos* já esteja ordenada.
 pub fn insere_ordenado(
-  desempenho: Desempenho,
   lista_desempenhos: List(Desempenho),
+  desempenho: Desempenho,
 ) -> List(Desempenho) {
   let lst =
     list.fold_until(lista_desempenhos, [], fn(acc, e) {
@@ -640,28 +637,33 @@ pub fn insere_ordenado(
 }
 
 pub fn insere_ordenado_examples() {
-  check.eq(insere_ordenado(Desempenho("Bahia", 3, 1, 1), []), [
+  check.eq(insere_ordenado([], Desempenho("Bahia", 3, 1, 1)), [
     Desempenho("Bahia", 3, 1, 1),
   ])
   check.eq(
-    insere_ordenado(Desempenho("Bahia", 3, 1, 1), [
-      Desempenho("Fortaleza", 0, 0, 2),
-    ]),
+    insere_ordenado(
+      [Desempenho("Fortaleza", 0, 0, 2)],
+      Desempenho("Bahia", 3, 1, 1),
+    ),
     [Desempenho("Bahia", 3, 1, 1), Desempenho("Fortaleza", 0, 0, 2)],
   )
   check.eq(
-    insere_ordenado(Desempenho("Bahia", 3, 1, 1), [
-      Desempenho("Palmeiras", 6, 2, 7),
-    ]),
+    insere_ordenado(
+      [Desempenho("Palmeiras", 6, 2, 7)],
+      Desempenho("Bahia", 3, 1, 1),
+    ),
     [Desempenho("Palmeiras", 6, 2, 7), Desempenho("Bahia", 3, 1, 1)],
   )
   check.eq(
-    insere_ordenado(Desempenho("Maringa", 3, 1, 7), [
-      Desempenho("Fluminense", 8, 2, 5),
-      Desempenho("São-Paulo", 8, 2, 5),
-      Desempenho("Coritiba", 6, 2, 4),
-      Desempenho("Fortaleza", 2, 0, 2),
-    ]),
+    insere_ordenado(
+      [
+        Desempenho("Fluminense", 8, 2, 5),
+        Desempenho("São-Paulo", 8, 2, 5),
+        Desempenho("Coritiba", 6, 2, 4),
+        Desempenho("Fortaleza", 2, 0, 2),
+      ],
+      Desempenho("Maringa", 3, 1, 7),
+    ),
     [
       Desempenho("Fluminense", 8, 2, 5),
       Desempenho("São-Paulo", 8, 2, 5),
