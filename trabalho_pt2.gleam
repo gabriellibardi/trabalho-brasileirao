@@ -301,11 +301,13 @@ pub fn parse_gols_examples() {
 
 // Verificação dos placares -----------------------------------------------------------------
 
-// Verifica se uma lista de *placares* possui jogos em excesso, isto é, se um time anfitrião
+/// Verifica se uma lista de *placares* possui jogos em excesso, isto é, se um time anfitrião
 /// recebe um mesmo time visitante mais de uma vez, retornando os mesmos False caso não haja
 /// repetição, ou True caso haja a inconsistência.
 pub fn verifica_repeticao_placares(placares: List(Placar)) -> Bool {
-  list.any(placares, repete_combinacao_times(_, placares))
+  list.index_fold(placares, False, fn(acc, placar, i) {
+    acc || repete_combinacao_times(placar, list.drop(placares, i + 1))
+  })
 }
 
 pub fn verifica_repeticao_placares_examples() {
@@ -373,12 +375,32 @@ pub fn repete_combinacao_times_examples() {
 
 /// Verifica se o *placar1* possui a mesma combinação de times que o *placar2*.
 pub fn mesma_combinacao(placar1: Placar, placar2: Placar) -> Bool {
-  placar1.nome_time_anf == placar2.nome_time_anf && placar1.nome_time_vis == placar2.nome_time_vis
+  placar1.nome_time_anf == placar2.nome_time_anf
+  && placar1.nome_time_vis == placar2.nome_time_vis
 }
+
 pub fn mesma_combinacao_examples() {
-  check.eq(mesma_combinacao(Placar("Flamengo", Gol(0), "Palmeiras", Gol(3)), Placar("Coritiba", Gol(2), "AthleticoPR", Gol(2))), False)
-  check.eq(mesma_combinacao(Placar("Cuiaba", Gol(1), "Fortaleza", Gol(2)), Placar("Fortaleza", Gol(3), "Cuiaba", Gol(4))), False)
-  check.eq(mesma_combinacao(Placar("Corinthians", Gol(3), "Criciuma", Gol(1)), Placar("Corinthians", Gol(1), "Criciuma", Gol(0))), True)
+  check.eq(
+    mesma_combinacao(
+      Placar("Flamengo", Gol(0), "Palmeiras", Gol(3)),
+      Placar("Coritiba", Gol(2), "AthleticoPR", Gol(2)),
+    ),
+    False,
+  )
+  check.eq(
+    mesma_combinacao(
+      Placar("Cuiaba", Gol(1), "Fortaleza", Gol(2)),
+      Placar("Fortaleza", Gol(3), "Cuiaba", Gol(4)),
+    ),
+    False,
+  )
+  check.eq(
+    mesma_combinacao(
+      Placar("Corinthians", Gol(3), "Criciuma", Gol(1)),
+      Placar("Corinthians", Gol(1), "Criciuma", Gol(0)),
+    ),
+    True,
+  )
 }
 
 // Obtenção dos desempenhos -----------------------------------------------------------------
