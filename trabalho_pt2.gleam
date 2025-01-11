@@ -99,18 +99,14 @@ pub type Desempenho {
 
 // Função principal do programa
 pub fn main(lista: List(String)) -> Result(List(String), Erro) {
-  case cria_lista_placares(lista) {
-    Error(erro) -> Error(erro)
-    Ok(lista_placares) ->
-      case verifica_repeticao_placares(lista_placares) {
-        True -> Error(JogosEmExcesso)
-        False ->
-          Ok(
-            converte_desempenhos_string(
-              ordena_desempenhos(calcula_desempenhos(lista_placares)),
-            ),
-          )
-      }
+  use lista_placares <- result.try(cria_lista_placares(lista))
+  case verifica_repeticao_placares(lista_placares) {
+    True -> Error(JogosEmExcesso)
+    False ->
+      calcula_desempenhos(lista_placares)
+      |> ordena_desempenhos
+      |> converte_desempenhos_string
+      |> Ok
   }
 }
 
