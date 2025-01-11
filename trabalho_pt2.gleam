@@ -99,18 +99,14 @@ pub type Desempenho {
 
 // Função principal do programa
 pub fn main(lista: List(String)) -> Result(List(String), Erro) {
-  case cria_lista_placares(lista) {
-    Error(erro) -> Error(erro)
-    Ok(lista_placares) ->
-      case verifica_repeticao_placares(lista_placares) {
-        True -> Error(JogosEmExcesso)
-        False ->
-          Ok(
-            converte_desempenhos_string(
-              ordena_desempenhos(calcula_desempenhos(lista_placares)),
-            ),
-          )
-      }
+  use lista_placares <- result.try(cria_lista_placares(lista))
+  case verifica_repeticao_placares(lista_placares) {
+    True -> Error(JogosEmExcesso)
+    False ->
+      calcula_desempenhos(lista_placares)
+      |> ordena_desempenhos
+      |> converte_desempenhos_string
+      |> Ok
   }
 }
 
@@ -151,24 +147,24 @@ pub fn main_examples() {
       "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
     ]),
     Ok([
-      "Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1",
-      "Sao-Paulo 1 0 -1",
+      "Flamengo    6 2  2", "Atletico-MG 3 1  0", "Palmeiras   1 0 -1",
+      "Sao-Paulo   1 0 -1",
     ]),
   )
   check.eq(
     main(["Flamengo 3 Criciuma 4"]),
-    Ok(["Criciuma 3 1 1", "Flamengo 0 0 -1"]),
+    Ok(["Criciuma 3 1  1", "Flamengo 0 0 -1"]),
   )
   check.eq(
     main(["Maringa 2 Londrina 1"]),
-    Ok(["Maringa 3 1 1", "Londrina 0 0 -1"]),
+    Ok(["Maringa  3 1  1", "Londrina 0 0 -1"]),
   )
   check.eq(main(["Sport 0 Bahia 0"]), Ok(["Bahia 1 0 0", "Sport 1 0 0"]))
   check.eq(
     main(["AthleticoPR 2 AtleticoGO 1", "Palmeiras 0 Corinthians 3"]),
     Ok([
-      "Corinthians 3 1 3", "AthleticoPR 3 1 1", "AtleticoGO 0 0 -1",
-      "Palmeiras 0 0 -3",
+      "Corinthians 3 1  3", "AthleticoPR 3 1  1", "AtleticoGO  0 0 -1",
+      "Palmeiras   0 0 -3",
     ]),
   )
   check.eq(
@@ -176,8 +172,8 @@ pub fn main_examples() {
       "Vasco 1 Coritiba 2", "BotaFogo 3 Gremio 1", "Coritiba 1 Internacional 0",
     ]),
     Ok([
-      "Coritiba 6 2 2", "BotaFogo 3 1 2", "Internacional 0 0 -1", "Vasco 0 0 -1",
-      "Gremio 0 0 -2",
+      "Coritiba      6 2  2", "BotaFogo      3 1  2", "Internacional 0 0 -1",
+      "Vasco         0 0 -1", "Gremio        0 0 -2",
     ]),
   )
   check.eq(
@@ -186,7 +182,8 @@ pub fn main_examples() {
       "Marialva 1 Flamengo 1", "Flamengo 2 Marialva 2",
     ]),
     Ok([
-      "Vitoria 3 1 3", "Marialva 3 0 0", "Flamengo 2 0 0", "Fluminense 1 0 -3",
+      "Vitoria    3 1  3", "Marialva   3 0  0", "Flamengo   2 0  0",
+      "Fluminense 1 0 -3",
     ]),
   )
 }
@@ -405,20 +402,12 @@ pub fn mesma_combinacao_examples() {
 
 // Obtenção dos desempenhos -----------------------------------------------------------------
 
-/// Retorna uma lista de Desempenhos com base nos *placares*.
+/// Retorna uma lista de Desempenhos com base na lista de *placares*.
 pub fn calcula_desempenhos(placares: List(Placar)) -> List(Desempenho) {
-  case placares {
-    [] -> []
-    [primeiro, ..resto] ->
-      case calcula_desempenho(primeiro) {
-        [desempenho_anf, desemepenho_vis] ->
-          juncao_desempenhos(
-            juncao_desempenhos(calcula_desempenhos(resto), desempenho_anf),
-            desemepenho_vis,
-          )
-        _ -> []
-      }
-  }
+  list.map(placares, fn(p) { p.nome_time_anf })
+  |> list.append(list.map(placares, fn(p) { p.nome_time_vis }))
+  |> list.unique()
+  |> list.map(calcula_desempenhos_time_placares(_, placares))
 }
 
 pub fn calcula_desempenhos_examples() {
@@ -433,10 +422,10 @@ pub fn calcula_desempenhos_examples() {
       Placar("Vitoria", Gol(2), "Gremio", Gol(3)),
     ]),
     [
-      Desempenho("Vitoria", 0, 0, -1),
-      Desempenho("Gremio", 3, 1, 1),
       Desempenho("Criciuma", 3, 1, 2),
+      Desempenho("Vitoria", 0, 0, -1),
       Desempenho("Goias", 0, 0, -2),
+      Desempenho("Gremio", 3, 1, 1),
     ],
   )
   check.eq(
@@ -446,128 +435,145 @@ pub fn calcula_desempenhos_examples() {
       Placar("Vasco", Gol(0), "Flamengo", Gol(1)),
     ]),
     [
-      Desempenho("Vasco", 0, 0, -1),
       Desempenho("Flamengo", 3, 1, 0),
       Desempenho("Paicandu", 1, 0, 0),
-      Desempenho("Chapecoense", 1, 0, 0),
+      Desempenho("Vasco", 0, 0, -1),
       Desempenho("AthleticoPR", 3, 1, 1),
+      Desempenho("Chapecoense", 1, 0, 0),
     ],
   )
 }
 
-/// Retorna uma lista composta por dois Desempenhos com base no *placar* e dos times presentes.
-pub fn calcula_desempenho(placar: Placar) -> List(Desempenho) {
-  case placar.gols_anf.numero_gols - placar.gols_vis.numero_gols {
-    num if num > 0 -> [
-      Desempenho(placar.nome_time_anf, 3, 1, num),
-      Desempenho(placar.nome_time_vis, 0, 0, -num),
-    ]
-    num if num < 0 -> [
-      Desempenho(placar.nome_time_anf, 0, 0, num),
-      Desempenho(placar.nome_time_vis, 3, 1, -num),
-    ]
-    _ -> [
-      Desempenho(placar.nome_time_anf, 1, 0, 0),
-      Desempenho(placar.nome_time_vis, 1, 0, 0),
-    ]
+/// Retorna o desempenho de um *time* com base em uma lista de *placares*.
+/// O desempenho calculado de um time não presente no placar é nulo.
+pub fn calcula_desempenhos_time_placares(
+  time: String,
+  placares: List(Placar),
+) -> Desempenho {
+  list.map(placares, calcula_desempenho_time(time, _))
+  |> list.fold_right(Desempenho(time, 0, 0, 0), fn(p1, p2) {
+    Desempenho(
+      p1.nome_time,
+      p1.numero_pontos + p2.numero_pontos,
+      p1.numero_vitorias + p2.numero_vitorias,
+      p1.saldo_gols + p2.saldo_gols,
+    )
+  })
+}
+
+pub fn calcula_desempenhos_time_placares_examples() {
+  check.eq(
+    calcula_desempenhos_time_placares("Flamengo", []),
+    Desempenho("Flamengo", 0, 0, 0),
+  )
+  check.eq(
+    calcula_desempenhos_time_placares("Sport", [
+      Placar("SaoPaulo", Gol(2), "Maringa", Gol(0)),
+    ]),
+    Desempenho("Sport", 0, 0, 0),
+  )
+  check.eq(
+    calcula_desempenhos_time_placares("Coritiba", [
+      Placar("Coritiba", Gol(1), "Internacional", Gol(1)),
+    ]),
+    Desempenho("Coritiba", 1, 0, 0),
+  )
+  check.eq(
+    calcula_desempenhos_time_placares("Santos", [
+      Placar("AtleticoMG", Gol(2), "Santos", Gol(3)),
+      Placar("Paicandu", Gol(1), "Bahia", Gol(2)),
+    ]),
+    Desempenho("Santos", 3, 1, 1),
+  )
+  check.eq(
+    calcula_desempenhos_time_placares("Vitoria", [
+      Placar("Grêmio", Gol(3), "Vitoria", Gol(1)),
+      Placar("Cuiaba", Gol(2), "Goias", Gol(2)),
+      Placar("Vitoria", Gol(5), "Palmeiras", Gol(0)),
+    ]),
+    Desempenho("Vitoria", 3, 1, 3),
+  )
+}
+
+/// Retorna o desempenho do *time* com base em um *placar*.
+/// O desempenho calculado de um time não presente no placar é nulo.
+pub fn calcula_desempenho_time(time: String, placar: Placar) -> Desempenho {
+  case time == placar.nome_time_anf, time == placar.nome_time_vis {
+    True, False -> calcula_desempenho_anfitriao(placar)
+    False, True -> calcula_desempenho_visitante(placar)
+    _, _ -> Desempenho(time, 0, 0, 0)
   }
 }
 
-pub fn calcula_desempenho_examples() {
-  check.eq(calcula_desempenho(Placar("Sport", Gol(2), "Cruzeiro", Gol(1))), [
+pub fn calcula_desempenho_time_examples() {
+  check.eq(
+    calcula_desempenho_time(
+      "Sport",
+      Placar("Sport", Gol(2), "Cruzeiro", Gol(1)),
+    ),
     Desempenho("Sport", 3, 1, 1),
-    Desempenho("Cruzeiro", 0, 0, -1),
-  ])
-  check.eq(calcula_desempenho(Placar("Maringa", Gol(1), "BotaFogo", Gol(3))), [
-    Desempenho("Maringa", 0, 0, -2),
+  )
+  check.eq(
+    calcula_desempenho_time(
+      "BotaFogo",
+      Placar("Maringa", Gol(1), "BotaFogo", Gol(3)),
+    ),
     Desempenho("BotaFogo", 3, 1, 2),
-  ])
-  check.eq(calcula_desempenho(Placar("Cuiaba", Gol(2), "Bahia", Gol(2))), [
-    Desempenho("Cuiaba", 1, 0, 0),
-    Desempenho("Bahia", 1, 0, 0),
-  ])
+  )
+  check.eq(
+    calcula_desempenho_time(
+      "Flamengo",
+      Placar("Corinthians", Gol(0), "Vitoria", Gol(3)),
+    ),
+    Desempenho("Flamengo", 0, 0, 0),
+  )
 }
 
-/// Retorna a atualização da lista de *desempenhos* a partir de *desempenho*, isto é, atualizando
-/// o desempenho do time que já está na lista ou adicionando um novo *desempenho*.
-pub fn juncao_desempenhos(
-  desempenhos: List(Desempenho),
-  desempenho: Desempenho,
-) -> List(Desempenho) {
-  case desempenhos {
-    [] -> [desempenho]
-    [primeiro, ..resto] ->
-      case primeiro.nome_time == desempenho.nome_time {
-        True -> [
-          Desempenho(
-            primeiro.nome_time,
-            primeiro.numero_pontos + desempenho.numero_pontos,
-            primeiro.numero_vitorias + desempenho.numero_vitorias,
-            primeiro.saldo_gols + desempenho.saldo_gols,
-          ),
-          ..resto
-        ]
-        False -> [primeiro, ..juncao_desempenhos(resto, desempenho)]
-      }
+/// Retorna o desempenho do time anfitrião com base em um *placar*.
+pub fn calcula_desempenho_anfitriao(placar: Placar) -> Desempenho {
+  case placar.gols_anf.numero_gols - placar.gols_vis.numero_gols {
+    num if num > 0 -> Desempenho(placar.nome_time_anf, 3, 1, num)
+    num if num < 0 -> Desempenho(placar.nome_time_anf, 0, 0, num)
+    _ -> Desempenho(placar.nome_time_anf, 1, 0, 0)
   }
 }
 
-pub fn juncao_desempenhos_examples() {
-  check.eq(juncao_desempenhos([], Desempenho("Fluminense", 1, 0, 0)), [
-    Desempenho("Fluminense", 1, 0, 0),
-  ])
+pub fn calcula_desempenho_anfitriao_examples() {
   check.eq(
-    juncao_desempenhos(
-      [Desempenho("Sport", 4, 1, 3), Desempenho("Coritiba", 0, 0, -3)],
-      Desempenho("Santos", 3, 1, 3),
-    ),
-    [
-      Desempenho("Sport", 4, 1, 3),
-      Desempenho("Coritiba", 0, 0, -3),
-      Desempenho("Santos", 3, 1, 3),
-    ],
+    calcula_desempenho_anfitriao(Placar("Sport", Gol(2), "Cruzeiro", Gol(1))),
+    Desempenho("Sport", 3, 1, 1),
   )
   check.eq(
-    juncao_desempenhos(
-      [Desempenho("Flamengo", 0, 0, -1), Desempenho("SaoPaulo", 3, 1, 1)],
-      Desempenho("Flamengo", 3, 1, 1),
-    ),
-    [Desempenho("Flamengo", 3, 1, 0), Desempenho("SaoPaulo", 3, 1, 1)],
+    calcula_desempenho_anfitriao(Placar("Maringa", Gol(1), "BotaFogo", Gol(3))),
+    Desempenho("Maringa", 0, 0, -2),
   )
   check.eq(
-    juncao_desempenhos(
-      [
-        Desempenho("Palmeiras", 3, 1, 2),
-        Desempenho("Londrina", 0, 0, -2),
-        Desempenho("Cruzeiro", 0, 0, -3),
-        Desempenho("Criciuma", 3, 1, 3),
-      ],
-      Desempenho("BotaFogo", 3, 1, 2),
-    ),
-    [
-      Desempenho("Palmeiras", 3, 1, 2),
-      Desempenho("Londrina", 0, 0, -2),
-      Desempenho("Cruzeiro", 0, 0, -3),
-      Desempenho("Criciuma", 3, 1, 3),
-      Desempenho("BotaFogo", 3, 1, 2),
-    ],
+    calcula_desempenho_anfitriao(Placar("Cuiaba", Gol(2), "Bahia", Gol(2))),
+    Desempenho("Cuiaba", 1, 0, 0),
+  )
+}
+
+/// Retorna o desempenho do time visitante com base em um *placar*.
+pub fn calcula_desempenho_visitante(placar: Placar) -> Desempenho {
+  case placar.gols_anf.numero_gols - placar.gols_vis.numero_gols {
+    num if num > 0 -> Desempenho(placar.nome_time_vis, 0, 0, -num)
+    num if num < 0 -> Desempenho(placar.nome_time_vis, 3, 1, -num)
+    _ -> Desempenho(placar.nome_time_vis, 1, 0, 0)
+  }
+}
+
+pub fn calcula_desempenho_visitante_examples() {
+  check.eq(
+    calcula_desempenho_visitante(Placar("Sport", Gol(2), "Cruzeiro", Gol(1))),
+    Desempenho("Cruzeiro", 0, 0, -1),
   )
   check.eq(
-    juncao_desempenhos(
-      [
-        Desempenho("Goias", 1, 0, 0),
-        Desempenho("Internacional", 1, 0, 0),
-        Desempenho("AtleticoMG", 3, 1, 2),
-        Desempenho("Paicandu", 0, 0, -2),
-      ],
-      Desempenho("AtleticoMG", 3, 1, 1),
-    ),
-    [
-      Desempenho("Goias", 1, 0, 0),
-      Desempenho("Internacional", 1, 0, 0),
-      Desempenho("AtleticoMG", 6, 2, 3),
-      Desempenho("Paicandu", 0, 0, -2),
-    ],
+    calcula_desempenho_visitante(Placar("Maringa", Gol(1), "BotaFogo", Gol(3))),
+    Desempenho("BotaFogo", 3, 1, 2),
+  )
+  check.eq(
+    calcula_desempenho_visitante(Placar("Cuiaba", Gol(2), "Bahia", Gol(2))),
+    Desempenho("Bahia", 1, 0, 0),
   )
 }
 
@@ -750,19 +756,19 @@ pub fn encontra_melhor_examples() {
 pub fn converte_desempenhos_string(
   desempenhos: List(Desempenho),
 ) -> List(String) {
-  case desempenhos {
-    [] -> []
-    [primeiro, ..resto] -> [
-      primeiro.nome_time
-        <> " "
-        <> int.to_string(primeiro.numero_pontos)
-        <> " "
-        <> int.to_string(primeiro.numero_vitorias)
-        <> " "
-        <> int.to_string(primeiro.saldo_gols),
-      ..converte_desempenhos_string(resto)
-    ]
-  }
+  let tam_max_nm = nome_max(desempenhos)
+  let tam_max_pnt = atb_int_max(desempenhos, fn(d) { d.numero_pontos })
+  let tam_max_vtr = atb_int_max(desempenhos, fn(d) { d.numero_vitorias })
+  let tam_max_sld = atb_int_max(desempenhos, fn(d) { d.saldo_gols })
+  list.map(desempenhos, fn(p) {
+    string.pad_right(p.nome_time, tam_max_nm, " ")
+    <> " "
+    <> string.pad_left(int.to_string(p.numero_pontos), tam_max_pnt, " ")
+    <> " "
+    <> string.pad_left(int.to_string(p.numero_vitorias), tam_max_vtr, " ")
+    <> " "
+    <> string.pad_left(int.to_string(p.saldo_gols), tam_max_sld, " ")
+  })
 }
 
 pub fn converte_desempenhos_string_examples() {
@@ -775,7 +781,7 @@ pub fn converte_desempenhos_string_examples() {
       Desempenho("Corinthians", 3, 1, 1),
       Desempenho("SaoPaulo", 0, 0, -1),
     ]),
-    ["Corinthians 3 1 1", "SaoPaulo 0 0 -1"],
+    ["Corinthians 3 1  1", "SaoPaulo    0 0 -1"],
   )
   check.eq(
     converte_desempenhos_string([
@@ -783,7 +789,7 @@ pub fn converte_desempenhos_string_examples() {
       Desempenho("Criciuma", 0, 0, -1),
       Desempenho("Londrina", 0, 0, -2),
     ]),
-    ["Palmeiras 6 2 3", "Criciuma 0 0 -1", "Londrina 0 0 -2"],
+    ["Palmeiras 6 2  3", "Criciuma  0 0 -1", "Londrina  0 0 -2"],
   )
   check.eq(
     converte_desempenhos_string([
@@ -792,6 +798,72 @@ pub fn converte_desempenhos_string_examples() {
       Desempenho("AthleticoPR", 1, 0, 0),
       Desempenho("Maringa", 1, 0, 0),
     ]),
-    ["Bahia 3 1 3", "Fortaleza 0 0 -3", "AthleticoPR 1 0 0", "Maringa 1 0 0"],
+    [
+      "Bahia       3 1  3", "Fortaleza   0 0 -3", "AthleticoPR 1 0  0",
+      "Maringa     1 0  0",
+    ],
+  )
+}
+
+/// Retorna maior tamanho de String com base nos nomes dos times presentes em uma lista
+/// de *desempenhos*.
+pub fn nome_max(desempenhos: List(Desempenho)) -> Int {
+  list.map(desempenhos, fn(d) { d.nome_time })
+  |> list.map(string.length)
+  |> list.fold_right(0, int.max)
+}
+
+pub fn nome_max_examples() {
+  check.eq(nome_max([]), 0)
+  check.eq(nome_max([Desempenho("Coritiba", 6, 2, 2)]), 8)
+  check.eq(
+    nome_max([Desempenho("Flamengo", 0, 0, 0), Desempenho("Palmeiras", 0, 0, 0)]),
+    9,
+  )
+  check.eq(
+    nome_max([
+      Desempenho("Gremio", 4, 1, 2),
+      Desempenho("Fortaleza", 4, 1, 1),
+      Desempenho("Corinthians", 0, 0, -3),
+    ]),
+    11,
+  )
+}
+
+/// Retorna o maior tamanho de String com base em algum atributo representado por Int na
+/// lista de *desempenhos*.
+pub fn atb_int_max(
+  desempenhos: List(Desempenho),
+  fun_map: fn(Desempenho) -> Int,
+) {
+  list.map(desempenhos, fun_map)
+  |> list.map(int.to_string)
+  |> list.map(string.length)
+  |> list.fold_right(0, int.max)
+}
+
+pub fn atb_int_max_examples() {
+  check.eq(atb_int_max([], fn(d) { d.numero_pontos }), 0)
+  check.eq(
+    atb_int_max([Desempenho("Fortaleza", 4, 1, 2)], fn(d) { d.numero_pontos }),
+    1,
+  )
+  check.eq(
+    atb_int_max(
+      [Desempenho("Sao-Paulo", 3, 1, 3), Desempenho("Paicandu", 0, 0, -3)],
+      fn(d) { d.numero_vitorias },
+    ),
+    1,
+  )
+  check.eq(
+    atb_int_max(
+      [
+        Desempenho("Sport", 6, 2, 3),
+        Desempenho("Cruzeiro", 0, 0, -2),
+        Desempenho("Corinthians", 0, 0, -1),
+      ],
+      fn(d) { d.saldo_gols },
+    ),
+    2,
   )
 }
