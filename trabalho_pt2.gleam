@@ -151,24 +151,24 @@ pub fn main_examples() {
       "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
     ]),
     Ok([
-      "Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1",
-      "Sao-Paulo 1 0 -1",
+      "Flamengo    6 2  2", "Atletico-MG 3 1  0", "Palmeiras   1 0 -1",
+      "Sao-Paulo   1 0 -1",
     ]),
   )
   check.eq(
     main(["Flamengo 3 Criciuma 4"]),
-    Ok(["Criciuma 3 1 1", "Flamengo 0 0 -1"]),
+    Ok(["Criciuma 3 1  1", "Flamengo 0 0 -1"]),
   )
   check.eq(
     main(["Maringa 2 Londrina 1"]),
-    Ok(["Maringa 3 1 1", "Londrina 0 0 -1"]),
+    Ok(["Maringa  3 1  1", "Londrina 0 0 -1"]),
   )
   check.eq(main(["Sport 0 Bahia 0"]), Ok(["Bahia 1 0 0", "Sport 1 0 0"]))
   check.eq(
     main(["AthleticoPR 2 AtleticoGO 1", "Palmeiras 0 Corinthians 3"]),
     Ok([
-      "Corinthians 3 1 3", "AthleticoPR 3 1 1", "AtleticoGO 0 0 -1",
-      "Palmeiras 0 0 -3",
+      "Corinthians 3 1  3", "AthleticoPR 3 1  1", "AtleticoGO  0 0 -1",
+      "Palmeiras   0 0 -3",
     ]),
   )
   check.eq(
@@ -176,8 +176,8 @@ pub fn main_examples() {
       "Vasco 1 Coritiba 2", "BotaFogo 3 Gremio 1", "Coritiba 1 Internacional 0",
     ]),
     Ok([
-      "Coritiba 6 2 2", "BotaFogo 3 1 2", "Internacional 0 0 -1", "Vasco 0 0 -1",
-      "Gremio 0 0 -2",
+      "Coritiba      6 2  2", "BotaFogo      3 1  2", "Internacional 0 0 -1",
+      "Vasco         0 0 -1", "Gremio        0 0 -2",
     ]),
   )
   check.eq(
@@ -186,7 +186,8 @@ pub fn main_examples() {
       "Marialva 1 Flamengo 1", "Flamengo 2 Marialva 2",
     ]),
     Ok([
-      "Vitoria 3 1 3", "Marialva 3 0 0", "Flamengo 2 0 0", "Fluminense 1 0 -3",
+      "Vitoria    3 1  3", "Marialva   3 0  0", "Flamengo   2 0  0",
+      "Fluminense 1 0 -3",
     ]),
   )
 }
@@ -756,19 +757,19 @@ pub fn encontra_melhor_examples() {
 pub fn converte_desempenhos_string(
   desempenhos: List(Desempenho),
 ) -> List(String) {
-  case desempenhos {
-    [] -> []
-    [primeiro, ..resto] -> [
-      primeiro.nome_time
-        <> " "
-        <> int.to_string(primeiro.numero_pontos)
-        <> " "
-        <> int.to_string(primeiro.numero_vitorias)
-        <> " "
-        <> int.to_string(primeiro.saldo_gols),
-      ..converte_desempenhos_string(resto)
-    ]
-  }
+  let tam_max_nm = nome_max(desempenhos)
+  let tam_max_pnt = atb_int_max(desempenhos, fn(d) { d.numero_pontos })
+  let tam_max_vtr = atb_int_max(desempenhos, fn(d) { d.numero_vitorias })
+  let tam_max_sld = atb_int_max(desempenhos, fn(d) { d.saldo_gols })
+  list.map(desempenhos, fn(p) {
+    string.pad_right(p.nome_time, tam_max_nm, " ")
+    <> " "
+    <> string.pad_left(int.to_string(p.numero_pontos), tam_max_pnt, " ")
+    <> " "
+    <> string.pad_left(int.to_string(p.numero_vitorias), tam_max_vtr, " ")
+    <> " "
+    <> string.pad_left(int.to_string(p.saldo_gols), tam_max_sld, " ")
+  })
 }
 
 pub fn converte_desempenhos_string_examples() {
@@ -781,7 +782,7 @@ pub fn converte_desempenhos_string_examples() {
       Desempenho("Corinthians", 3, 1, 1),
       Desempenho("SaoPaulo", 0, 0, -1),
     ]),
-    ["Corinthians 3 1 1", "SaoPaulo 0 0 -1"],
+    ["Corinthians 3 1  1", "SaoPaulo    0 0 -1"],
   )
   check.eq(
     converte_desempenhos_string([
@@ -789,7 +790,7 @@ pub fn converte_desempenhos_string_examples() {
       Desempenho("Criciuma", 0, 0, -1),
       Desempenho("Londrina", 0, 0, -2),
     ]),
-    ["Palmeiras 6 2 3", "Criciuma 0 0 -1", "Londrina 0 0 -2"],
+    ["Palmeiras 6 2  3", "Criciuma  0 0 -1", "Londrina  0 0 -2"],
   )
   check.eq(
     converte_desempenhos_string([
@@ -798,6 +799,72 @@ pub fn converte_desempenhos_string_examples() {
       Desempenho("AthleticoPR", 1, 0, 0),
       Desempenho("Maringa", 1, 0, 0),
     ]),
-    ["Bahia 3 1 3", "Fortaleza 0 0 -3", "AthleticoPR 1 0 0", "Maringa 1 0 0"],
+    [
+      "Bahia       3 1  3", "Fortaleza   0 0 -3", "AthleticoPR 1 0  0",
+      "Maringa     1 0  0",
+    ],
+  )
+}
+
+/// Retorna maior tamanho de String com base nos nomes dos times presentes em uma lista
+/// de *desempenhos*.
+pub fn nome_max(desempenhos: List(Desempenho)) -> Int {
+  list.map(desempenhos, fn(d) { d.nome_time })
+  |> list.map(string.length)
+  |> list.fold_right(0, int.max)
+}
+
+pub fn nome_max_examples() {
+  check.eq(nome_max([]), 0)
+  check.eq(nome_max([Desempenho("Coritiba", 6, 2, 2)]), 8)
+  check.eq(
+    nome_max([Desempenho("Flamengo", 0, 0, 0), Desempenho("Palmeiras", 0, 0, 0)]),
+    9,
+  )
+  check.eq(
+    nome_max([
+      Desempenho("Gremio", 4, 1, 2),
+      Desempenho("Fortaleza", 4, 1, 1),
+      Desempenho("Corinthians", 0, 0, -3),
+    ]),
+    11,
+  )
+}
+
+/// Retorna o maior tamanho de String com base em algum atributo representado por Int na
+/// lista de *desempenhos*.
+pub fn atb_int_max(
+  desempenhos: List(Desempenho),
+  fun_map: fn(Desempenho) -> Int,
+) {
+  list.map(desempenhos, fun_map)
+  |> list.map(int.to_string)
+  |> list.map(string.length)
+  |> list.fold_right(0, int.max)
+}
+
+pub fn atb_int_max_examples() {
+  check.eq(atb_int_max([], fn(d) { d.numero_pontos }), 0)
+  check.eq(
+    atb_int_max([Desempenho("Fortaleza", 4, 1, 2)], fn(d) { d.numero_pontos }),
+    1,
+  )
+  check.eq(
+    atb_int_max(
+      [Desempenho("Sao-Paulo", 3, 1, 3), Desempenho("Paicandu", 0, 0, -3)],
+      fn(d) { d.numero_vitorias },
+    ),
+    1,
+  )
+  check.eq(
+    atb_int_max(
+      [
+        Desempenho("Sport", 6, 2, 3),
+        Desempenho("Cruzeiro", 0, 0, -2),
+        Desempenho("Corinthians", 0, 0, -1),
+      ],
+      fn(d) { d.saldo_gols },
+    ),
+    2,
   )
 }
