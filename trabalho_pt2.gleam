@@ -403,19 +403,19 @@ pub fn mesma_combinacao_examples() {
   )
 }
 
-/// Remove o primeiro elemento da lista de *placares*. Caso não haja placares a remover,
-/// devolve lista vazia.
-pub fn remove_primeiro_placar(placares: List(Placar)) -> List(Placar) {
-  case placares {
-    [_, ..r] -> r
-    _ -> []
-  }
-}
-
 // Obtenção dos desempenhos -----------------------------------------------------------------
 
-/// Retorna uma lista de Desempenhos com base nos *placares*.
+/// Retorna uma lista de Desempenhos com base na lista de *placares*.
 pub fn calcula_desempenhos(placares: List(Placar)) -> List(Desempenho) {
+  let lista_total_desempenhos = list.map(placares, calcula_desempenho_anfitriao)
+  |> list.append(list.map(placares, calcula_desempenho_visitante))
+  let lista_times = list.map(placares, fn(p) {p.nome_time_anf})
+  |> list.append(list.map(placares, fn(p) {p.nome_time_vis}))
+  |> list.unique()
+  list.map(lista_times, calcula_desempenhos_time(_, placares))
+
+  
+
   case placares {
     [] -> []
     [primeiro, ..resto] ->
@@ -464,37 +464,57 @@ pub fn calcula_desempenhos_examples() {
   )
 }
 
-/// Retorna uma lista composta por dois Desempenhos com base no *placar* e dos times presentes.
-pub fn calcula_desempenho(placar: Placar) -> List(Desempenho) {
-  case placar.gols_anf.numero_gols - placar.gols_vis.numero_gols {
-    num if num > 0 -> [
-      Desempenho(placar.nome_time_anf, 3, 1, num),
-      Desempenho(placar.nome_time_vis, 0, 0, -num),
-    ]
-    num if num < 0 -> [
-      Desempenho(placar.nome_time_anf, 0, 0, num),
-      Desempenho(placar.nome_time_vis, 3, 1, -num),
-    ]
-    _ -> [
-      Desempenho(placar.nome_time_anf, 1, 0, 0),
-      Desempenho(placar.nome_time_vis, 1, 0, 0),
-    ]
+/// Retorna todos os desempenhos de um *time* com base em uma lista de *placares*.
+/// O desempenho calculado de um time não presente no placar é nulo.
+pub fn calcula_desempenhos_time(time: String, placares: List(Placares)) -> List(Desempenho) {
+  list.map(placares, calcula_desempenho_time(time, _))
+  |> list.fold_right(Desempenho(time, 0, 0), )
+}
+
+
+/// Retorna o desempenho do *time* com base em um *placar*.
+/// O desempenho calculado de um time não presente no placar é nulo.
+pub fn calcula_desempenho_time(time: String, placar: Placar) -> Desempenho {
+  case time == placar.nome_time_anf, time == placar.nome_time_vis {
+    True, False -> calcula_desempenho_anfitriao(placar)
+    False, True -> calcula_desempenho_visitante(placar)
+    _ -> Desempenho(time, 0, 0, 0)
   }
 }
 
-pub fn calcula_desempenho_examples() {
-  check.eq(calcula_desempenho(Placar("Sport", Gol(2), "Cruzeiro", Gol(1))), [
-    Desempenho("Sport", 3, 1, 1),
-    Desempenho("Cruzeiro", 0, 0, -1),
-  ])
-  check.eq(calcula_desempenho(Placar("Maringa", Gol(1), "BotaFogo", Gol(3))), [
-    Desempenho("Maringa", 0, 0, -2),
-    Desempenho("BotaFogo", 3, 1, 2),
-  ])
-  check.eq(calcula_desempenho(Placar("Cuiaba", Gol(2), "Bahia", Gol(2))), [
-    Desempenho("Cuiaba", 1, 0, 0),
-    Desempenho("Bahia", 1, 0, 0),
-  ])
+pub fn calcula_desempenho_time_examples() {
+  check.eq(calcula_desempenho_time("Sport", Placar("Sport", Gol(2), "Cruzeiro", Gol(1))), Desempenho("Sport", 3, 1, 1))
+  check.eq(calcula_desempenho_time("BotaFogo", Placar("Maringa", Gol(1), "BotaFogo", Gol(3))), Desempenho("BotaFogo", 3, 1, 2))
+}
+
+/// Retorna o desempenho do time anfitrião com base em um *placar*.
+pub fn calcula_desempenho_anfitriao(placar: Placar) -> Desempenho {
+  case placar.gols_anf.numero_gols - placar.gols_vis.numero_gols {
+    num if num > 0 -> Desempenho(placar.nome_time_anf, 3, 1, num)
+    num if num < 0 -> Desempenho(placar.nome_time_anf, 0, 0, num)
+    _ -> Desempenho(placar.nome_time_anf, 1, 0, 0)
+  }
+}
+
+pub fn calcula_desempenho_anfitriao_examples() {
+  check.eq(calcula_desempenho_anfitriao(Placar("Sport", Gol(2), "Cruzeiro", Gol(1))), Desempenho("Sport", 3, 1, 1))
+  check.eq(calcula_desempenho_anfitriao(Placar("Maringa", Gol(1), "BotaFogo", Gol(3))), Desempenho("Maringa", 0, 0, -2))
+  check.eq(calcula_desempenho_anfitriao(Placar("Cuiaba", Gol(2), "Bahia", Gol(2))), Desempenho("Cuiaba", 1, 0, 0))
+}
+
+/// Retorna o desempenho do time visitante com base em um *placar*.
+pub fn calcula_desempenho_visitante(placar: Placar) -> Desempenho {
+  case placar.gols_anf.numero_gols - placar.gols_vis.numero_gols {
+    num if num > 0 -> Desempenho(placar.nome_time_vis, 0, 0, -num)
+    num if num < 0 -> Desempenho(placar.nome_time_vis, 3, 1, -num)
+    _ -> Desempenho(placar.nome_time_vis, 1, 0, 0)
+  }
+}
+
+pub fn calcula_desempenho_visitante_examples() {
+  check.eq(calcula_desempenho_visitante(Placar("Sport", Gol(2), "Cruzeiro", Gol(1))), Desempenho("Cruzeiro", 0, 0, -1))
+  check.eq(calcula_desempenho_visitante(Placar("Maringa", Gol(1), "BotaFogo", Gol(3))), Desempenho("BotaFogo", 3, 1, 2))
+  check.eq(calcula_desempenho_visitante(Placar("Cuiaba", Gol(2), "Bahia", Gol(2))), Desempenho("Bahia", 1, 0, 0))
 }
 
 /// Retorna a atualização da lista de *desempenhos* a partir de *desempenho*, isto é, atualizando
@@ -579,6 +599,10 @@ pub fn juncao_desempenhos_examples() {
     ],
   )
 }
+
+/// Atualiza a lista de *desempenhos* a partir de um *desempenho*.
+pub fn atualiza_desempenhos(desempenho: Desempenho, desempenhos: List(Desempenho)) -> List(Desempenho):
+  
 
 // Ordenação dos desempenhos ----------------------------------------------------------------
 
